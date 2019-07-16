@@ -27,6 +27,6 @@ def test_all_load_ok():
         # ...with the right names...
         assert data.columns == FIELDS[1:]
         # ...and that we don't have any missing values from the conversion
-        assert not data.isna().any(axis=None)
+        assert data.notna().all(axis=None)
         # Check that we haven't missed any metadata columns
         assert all(key in metadata for key in METADATA_COLUMNS)
