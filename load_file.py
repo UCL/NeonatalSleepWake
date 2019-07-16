@@ -46,6 +46,30 @@ def convert_data_types(data):
     return new_data
 
 
+def convert_metadata(raw_metadata, datemode):
+    """Convert the metadata to appropriate types."""
+    metadata = {}
+    # Create a time object from the time: the time is loaded as a fraction
+    # of a day, but xlrd has convenience methods for interpreting it
+    try:
+        metadata["Start_time"] = xlrd.xldate_as_datetime(
+            raw_metadata["Start_time"].value, datemode).time()
+    except TypeError:  # some times may be missing
+        metadata["Start_time"] = None
+    # Store the baby reference as an int - although string might also be fine?
+    # TODO Some non-int values found, so storing as string for now
+    metadata["Baby_reference"] = str(raw_metadata["Baby_reference"].value)
+    # Convert boolean attributes (assume everything non-"yes" is False)
+    for field in ["Neonatal_unit_yes_no", "High_risk_yes_no"]:
+        metadata[field] = raw_metadata[field].value == "yes"
+    # Convert number of days/weeks to plain numbers
+    metadata["Postnatal_age_days"] = int(
+        raw_metadata["Postnatal_age_days"].value)
+    metadata["Corrected_gestational_age_weeks"] = float(
+        raw_metadata["Corrected_gestational_age_weeks"].value)
+    return metadata
+
+
 def load_file(path):
     """Load the data from the specified Excel workbook."""
     # TODO Can this be done with a context manager?
@@ -66,5 +90,7 @@ def load_file(path):
     # Convert the values into something more standard than strings
     data = convert_data_types(data)
     # Read metadata from the second row
-    metadata = dict(zip(METADATA_COLUMNS, sheet.row(1)[n_epochs+1:]))
+    metadata = convert_metadata(
+        dict(zip(METADATA_COLUMNS, sheet.row(1)[n_epochs+1:])),
+        book.datemode)
     return data, metadata
