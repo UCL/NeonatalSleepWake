@@ -6,3 +6,48 @@ small.xlsx:
     Neonatal_unit_yes_no: true
     Postnatal_age_days: 14
     Start_time: '01:23'
+
+test_experiment:
+  Sleep_wake:
+    - Awake
+    - Awake
+    - REM
+    - nREM
+    - nREM
+    - Trans
+    - REM
+    - Awake
+  Painful_stimulation_yes_no:
+    - false
+    - false
+    - false
+    - true
+    - false
+    - false
+    - false
+    - false
+  Somatosensory_stimulation_yes_no:
+    - true
+    - true
+    - true
+    - false
+    - true
+    - true
+    - true
+    - true
+  Held_yes_no:
+    - false
+    - false
+    - false
+    - false
+    - true
+    - true
+    - true
+    - true
+  meta:
+    Baby_reference: '12345.0'
+    Corrected_gestational_age_weeks: 23.45
+    High_risk_yes_no: false
+    Neonatal_unit_yes_no: true
+    Postnatal_age_days: 14
+    Start_time: '01:23'
