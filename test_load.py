@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 
 from load_file import load_file, FIELDS, METADATA_COLUMNS
 
@@ -36,3 +37,21 @@ def test_all_load_ok():
             warnings.warn(f"Missing data found in {os.path.basename(filename)}")
         # Check that we haven't missed any metadata columns
         assert all(key in metadata for key in METADATA_COLUMNS)
+
+
+def test_load_correct():
+    """Check that loading a sample file gives the expected results."""
+    filename = "tests/data/small.xlsx"
+    loaded_data, loaded_meta = load_file(filename)
+    # TODO Use a proper fixture instead of reading the results here
+    with open('tests/data/fixtures.yaml') as data_file:
+        expected_data = yaml.safe_load(data_file)[os.path.basename(filename)]
+        expected_meta = expected_data.pop('meta')
+    assert loaded_data.any(axis=None)
+    for field in loaded_meta:
+        # Time is a bit harder to check because we cannot represent it as a
+        # time object directly in YAML
+        if field == "Start_time":
+            assert loaded_meta[field].strftime('%H:%M') == expected_meta[field]
+        else:
+            assert loaded_meta[field] == expected_meta[field]
