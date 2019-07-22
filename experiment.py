@@ -32,9 +32,9 @@ class Experiment:
                                    != self._data.Sleep_wake.shift(1)
                                    ).cumsum()
         runs = self._data.groupby("subgroups", as_index=False).apply(
-            lambda x: (x.iloc[:, 0].head(1), len(x)))
+            lambda x: (x.iloc[0, 0], len(x)))
         # Filter only the runs of the state we want
-        return [length for group_state, length in runs if (group_state == state).all()]
+        return [length for group_state, length in runs if group_state == state]
 
     def count_transitions(self, from_states, to_states):
         """Return how many transitions occur between the given states."""
