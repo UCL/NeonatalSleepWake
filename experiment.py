@@ -51,11 +51,30 @@ class Experiment:
         # Return the number of transitions found
         return matching.sum()
 
-    def count_held(self):
-        return self._data.Held_yes_no.sum()
-
-    def count_painful(self):
-        return self._data.Painful_stimulation_yes_no.sum()
-
-    def count_somatosensory(self):
-        return self._data.Somatosensory_stimulation_yes_no.sum()
+    def summarise(self):
+        """Get a summary of the information from this experiment."""
+        summary = [
+            self.Baby_reference, self.Start_time, self.Neonatal_unit_yes_no,
+            self.High_risk_yes_no, self.Postnatal_age_days,
+            self.Corrected_gestational_age_weeks
+        ]
+        # Time spent in each state
+        # TODO Currently counts all durations, regardless of onset captured
+        sleep_states = ["REM", "nREM", "Trans", "Awake"]
+        sleep_states_no_trans = ["REM", "nREM", "Awake"]
+        for state in sleep_states:
+            percent_time = self.count(state) / self.number_epochs()
+            mean_duration = np.mean(self.durations(state))
+            summary.extend([percent_time, mean_duration])
+        # State changes
+        summary.append(self.count_transitions(sleep_states, sleep_states))
+        summary.append(self.count_transitions(sleep_states_no_trans,
+                                              sleep_states_no_trans))
+        # Remaining summary data
+        summary.append(self.number_epochs())
+        summary.extend([
+            self._data.Painful_stimulation_yes_no.sum() > 0,
+            self._data.Somatosensory_stimulation_yes_no.sum() > 0,
+            self._data.Held_yes_no.sum() > 0,
+        ])
+        return summary
