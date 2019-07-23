@@ -7,7 +7,7 @@ small.xlsx:
     Postnatal_age_days: 14
     Start_time: '01:23'
 
-test_experiment:
+sample_experiment:
   Sleep_wake:
     - Awake
     - Awake
