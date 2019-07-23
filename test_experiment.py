@@ -42,10 +42,10 @@ def test_count(sample_experiment):
 
 
 def test_durations(sample_experiment):
-    assert sample_experiment.durations("Awake") == [2, 1]
-    assert sample_experiment.durations("nREM") == [2]
-    assert sample_experiment.durations("REM") == [1, 1]
-    assert sample_experiment.durations("Trans") == [1]
+    assert all(sample_experiment.durations("Awake") == [2, 1])
+    assert all(sample_experiment.durations("nREM") == [2])
+    assert all(sample_experiment.durations("REM") == [1, 1])
+    assert all(sample_experiment.durations("Trans") == [1])
 
 
 def test_count_transitions(sample_experiment):

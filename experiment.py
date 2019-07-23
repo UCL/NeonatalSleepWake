@@ -2,6 +2,7 @@ import os
 import warnings
 
 import numpy as np
+import pandas as pd
 
 from load_file import load_file
 
@@ -14,6 +15,8 @@ class Experiment:
         # Would this be convenient?
         for key, value in metadata.items():
             setattr(self, key, value)
+        # Precompute some statistics
+        self._compute_sojourns()
 
     def number_epochs(self):
         return len(self._data)
@@ -28,31 +31,15 @@ class Experiment:
     def durations(self, state):
         """Compute how long the patient spends in the given state each time.
 
-        Returns a list of durations in epochs.
+        Returns an array of durations in epochs.
         """
-        # Find the duration of all consecutive sequences in the dataframe
-        # then store them as tuples of (state, duration) in a new series
-        # TODO This can be precomputed at creation to avoid repeating it
-        self._data["subgroups"] = (self._data.Sleep_wake
-                                   != self._data.Sleep_wake.shift(1)
-                                   ).cumsum()
-        runs = self._data.groupby("subgroups", as_index=False).apply(
-            lambda x: (x.iloc[0, 0], len(x)))
         # Filter only the runs of the state we want
-        return [length for group_state, length in runs if group_state == state]
+        return self._runs[self._runs.From == state].Duration.values
 
     def count_transitions(self, from_states, to_states):
         """Return how many transitions occur between the given states."""
-        # TODO This could be more efficient by storing the start and end state
-        #      after each run (as in durations)
-        temp = np.array([self._data.iloc[:, 0],
-                         self._data.iloc[:, 0].shift(-1)]).T
-        matching = np.logical_and(
-            np.isin(temp[:, 0], from_states),
-            np.isin(temp[:, 1], to_states)
-        )
-        # Only keep real transitions, i.e. when the state changes
-        matching = np.logical_and(matching, temp[:, 0] != temp[:, 1])
+        matching = (self._runs.From.isin(from_states)
+                    & self._runs.To.isin(to_states))
         # Return the number of transitions found
         return matching.sum()
 
@@ -83,6 +70,27 @@ class Experiment:
             self._data.Held_yes_no.sum() > 0,
         ])
         return summary
+
+    def _compute_sojourns(self):
+        """Record how long we spend at each state and where we transition to."""
+        # Find the duration of all consecutive sequences in the dataframe
+        # then store them as tuples of (state, duration) in a new series
+        self._data["subgroups"] = (self._data.Sleep_wake
+                                   != self._data.Sleep_wake.shift(1)
+                                   ).cumsum()
+        runs = self._data.groupby("subgroups", as_index=False).apply(
+            lambda x: (x.iloc[0, 0], len(x)))
+        # Store this in a new dataframe, recording the state and how many
+        # epochs were spent in it
+        self._runs = pd.DataFrame({
+            "From": [x[0] for x in runs],
+            "Duration": [x[1] for x in runs]})
+        # Now find what the next state is for each of these transitions
+        # by checking the state at the total time spent so far
+        # (we need reset_index to insert the states in the order given,
+        # ignoring their index)
+        to_indices = self._runs.Duration.cumsum()[:-1]
+        self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
 
 
 class ExperimentCollection:
