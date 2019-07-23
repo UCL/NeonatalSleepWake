@@ -50,3 +50,12 @@ class Experiment:
         matching = np.logical_and(matching, temp[:, 0] != temp[:, 1])
         # Return the number of transitions found
         return matching.sum()
+
+    def count_held(self):
+        return self._data.Held_yes_no.sum()
+
+    def count_painful(self):
+        return self._data.Painful_stimulation_yes_no.sum()
+
+    def count_somatosensory(self):
+        return self._data.Somatosensory_stimulation_yes_no.sum()
