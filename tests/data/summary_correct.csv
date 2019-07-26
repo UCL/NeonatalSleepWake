@@ -1,0 +1,3 @@
+Baby_reference,Start_time,Neonatal_unit_yes_no,High_risk_yes_no,Postnatal_age_days,Corrected_gestational_age_weeks,%REM,Mean_duration_REM_if_onset_captured,%nREM,Mean_duration_nREM_if_onset_captured,%Trans,Mean_duration_Trans_if_onset_captured,%Awake,Mean_duration_Awake_if_onset_captured,No.state_changes_including_all_4_states,No.state_changes_restricted_Awake_REM_nREM,No.epochs,Painful_stimulation_any_yes_no,Somatosensory_stimulation_any_yes_no,Held_any_yes_no
+12345.0,01:23:00,True,False,14,23.45,0.2,1.0,0.2,1.0,0.2,1.0,0.4,2.0,3,1,5,False,True,True
+12345.0,01:23:00,True,False,14,23.45,0.2,1.0,0.2,1.0,0.2,1.0,0.4,2.0,3,1,5,False,True,True

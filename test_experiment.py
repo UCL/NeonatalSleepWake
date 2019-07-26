@@ -1,11 +1,12 @@
 """Tests for the methods of the Experiment class."""
+import filecmp
 import os
 
 import pandas as pd
 import pytest
 import yaml
 
-from experiment import Experiment
+from experiment import Experiment, ExperimentCollection
 
 
 @pytest.fixture(scope="module")
@@ -60,3 +61,12 @@ def test_count_transitions(sample_experiment):
     assert sample_experiment.count_transitions(["Awake", "Trans"], ["REM"]) == 2
     assert sample_experiment.count_transitions(["Trans", "Awake"], ["REM"]) == 2
 
+
+def test_summary_correct():
+    """Check that the summary of some experiments is as expected."""
+    files = ["tests/data/small.xlsx", "tests/data/small.xlsx"]
+    collection = ExperimentCollection(files)
+    collection.write_summary("summary.csv")
+    assert filecmp.cmp("summary.csv",
+                       "tests/data/summary_correct.csv",
+                       shallow=False)
