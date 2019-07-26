@@ -22,8 +22,8 @@ def test_all_load_ok():
     # TODO Get this from the module rather than redefining it
     cat_type = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
     dir_path = os.environ["NEONATAL_TEST_DIR"]
-    real_files = glob.iglob(dir_path + "*.xlsx")
-    assert real_files, "No files found!"
+    real_files = glob.glob(dir_path + "*.xlsx")
+    assert real_files, f"No data files found at {dir_path}!"
     for filename in real_files:
         data, metadata = load_file(filename)
         # Check that we are getting one category and three boolean columns...
