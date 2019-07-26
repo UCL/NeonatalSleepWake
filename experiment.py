@@ -17,13 +17,16 @@ class Experiment:
             setattr(self, key, value)
         # Precompute some statistics
         self._compute_sojourns()
+        # Assume we want to use all the data
+        self._start = 0  # which data row to start reading from
+        self._runs_start = 0  # which run to start reading from
 
     def number_epochs(self):
-        return len(self._data)
+        return len(self._data[self._start:])
 
     def count(self, state):
         """Return how many times a sleep state occurs in this experiment."""
-        sleep_states = self._data.iloc[:, 0]
+        sleep_states = self._data.iloc[self._start:, 0]
         if state not in sleep_states.dtype.categories:
             raise ValueError(f"Unrecognised sleep state: {state}")
         return (sleep_states == state).sum()
@@ -33,13 +36,15 @@ class Experiment:
 
         Returns an array of durations in epochs.
         """
-        # Filter only the runs of the state we want
-        return self._runs[self._runs.From == state].Duration.values
+        # Filter only the runs of the state we want...
+        runs = self._runs[self._runs.From == state].Duration
+        # ...and only from the time of interest onwards
+        return runs[self._runs_start:].values
 
     def count_transitions(self, from_states, to_states):
         """Return how many transitions occur between the given states."""
         matching = (self._runs.From.isin(from_states)
-                    & self._runs.To.isin(to_states))
+                    & self._runs.To.isin(to_states))[self._runs_start:]
         # Return the number of transitions found
         return matching.sum()
 
@@ -65,9 +70,9 @@ class Experiment:
         # Remaining summary data
         summary.append(self.number_epochs())
         summary.extend([
-            self._data.Painful_stimulation_yes_no.sum() > 0,
-            self._data.Somatosensory_stimulation_yes_no.sum() > 0,
-            self._data.Held_yes_no.sum() > 0,
+            self._data.Painful_stimulation_yes_no[self._runs_start:].sum() > 0,
+            self._data.Somatosensory_stimulation_yes_no[self._runs_start:].sum() > 0,
+            self._data.Held_yes_no[self._runs_start:].sum() > 0,
         ])
         return summary
 
@@ -91,6 +96,20 @@ class Experiment:
         # ignoring their index)
         to_indices = self._runs.Duration.cumsum()[:-1]
         self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
+
+    def _start_at_epoch(self, epoch_number):
+        """Specify which epoch we should consider at the first.
+
+        Epochs from before epoch_number will be ignored when retrieving
+        statistics. Note that epoch_number is taken to be zero-based.
+        """
+        self._start = epoch_number
+        self._runs_start = self._runs[
+            self._runs.Duration.cumsum() > epoch_number][0]
+
+    def reset(self):
+        """Set the starting epoch to the first one."""
+        self._start = self._runs_start = 0
 
 
 class ExperimentCollection:
