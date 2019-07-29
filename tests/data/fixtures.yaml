@@ -8,6 +8,7 @@ small.xlsx:
     Start_time: '01:23'
 
 sample_experiment:
+  raw: tests/data/sample_experiment.xlsx
   data: tests/data/sample_experiment.csv
   meta:
     Baby_reference: '12345.0'

@@ -62,7 +62,8 @@ def test_count_transitions(sample_experiment):
 
 def test_summary_correct():
     """Check that the summary of some experiments is as expected."""
-    files = ["tests/data/small.xlsx", "tests/data/small.xlsx"]
+    files = ["tests/data/sample_experiment.xlsx",
+             "tests/data/sample_experiment.xlsx"]
     collection = ExperimentCollection(files)
     collection.write_summary("summary.csv")
     assert filecmp.cmp("summary.csv",

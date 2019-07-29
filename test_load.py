@@ -41,13 +41,14 @@ def test_all_load_ok():
 
 def test_load_correct():
     """Check that loading a sample file gives the expected results."""
-    filename = "tests/data/small.xlsx"
-    loaded_data, loaded_meta = load_file(filename)
+    basename = "sample_experiment"
     # TODO Use a proper fixture instead of reading the results here
     with open('tests/data/fixtures.yaml') as data_file:
-        expected_data = yaml.safe_load(data_file)[os.path.basename(filename)]
-        expected_meta = expected_data.pop('meta')
-    assert loaded_data.any(axis=None)
+        fixture_data = yaml.safe_load(data_file)[basename]
+        # expected_data = fixture_data['data']  # not yet checked
+        expected_meta = fixture_data['meta']
+    loaded_data, loaded_meta = load_file(fixture_data['raw'])
+    assert loaded_data.any(axis=None)  # TODO compare against expected
     for field in loaded_meta:
         # Time is a bit harder to check because we cannot represent it as a
         # time object directly in YAML
