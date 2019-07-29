@@ -1,6 +1,5 @@
 """Tests for the methods of the Experiment class."""
 import filecmp
-import os
 
 import pandas as pd
 import pytest
@@ -12,10 +11,9 @@ from experiment import Experiment, ExperimentCollection
 @pytest.fixture(scope="module")
 def sample_data():
     with open('tests/data/fixtures.yaml') as data_file:
-        yaml_data = yaml.safe_load(data_file)[
-            os.path.basename("sample_experiment")]
-        yaml_meta = yaml_data.pop('meta', None)
-    data = pd.DataFrame(yaml_data)
+        yaml_contents = yaml.safe_load(data_file)['sample_experiment']
+    yaml_meta = yaml_contents['meta']
+    data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(
         pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"]))
     return data, yaml_meta

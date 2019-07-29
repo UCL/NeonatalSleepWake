@@ -8,42 +8,7 @@ small.xlsx:
     Start_time: '01:23'
 
 sample_experiment:
-  Sleep_wake:
-    - Awake
-    - Awake
-    - REM
-    - nREM
-    - nREM
-    - Trans
-    - REM
-    - Awake
-  Painful_stimulation_yes_no:
-    - false
-    - false
-    - false
-    - true
-    - false
-    - false
-    - false
-    - false
-  Somatosensory_stimulation_yes_no:
-    - true
-    - true
-    - true
-    - false
-    - true
-    - true
-    - true
-    - true
-  Held_yes_no:
-    - false
-    - false
-    - false
-    - false
-    - true
-    - true
-    - true
-    - true
+  data: tests/data/sample_experiment.csv
   meta:
     Baby_reference: '12345.0'
     Corrected_gestational_age_weeks: 23.45
