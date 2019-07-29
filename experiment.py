@@ -97,6 +97,41 @@ class Experiment:
         to_indices = self._runs.Duration.cumsum()[:-1]
         self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
 
+    def start_at_state(self, state, observed_start=True):
+        """Shift the data so that it starts at the specified state.
+
+        Epochs before this state is found will be ignored when retrieving
+        statistics. If observed_start is True, epochs will be ignored until a
+        transition to the given state is found. Otherwise, the first occurrence
+        of the state will be taken as the start, even if it is the first epoch
+        observed (and we therefore can't know how long the patient had been in
+        that state already).
+
+        :param state: the name of the state as a string (e.g. Awake, nREM)
+        :param observed_start: if True, require that we know when the given
+        has started, otherwise use its first occurrence
+        """
+        # TODO Make this check consistent/abstract into a method or decorator
+        if state not in self._data.Sleep_wake.dtype.categories:
+            raise ValueError(f"Unrecognised sleep state: {state}")
+        # Look into the compiled runs to find all occurrences of the state
+        matching_runs = self._runs[self._runs.From == state]
+        # Ignore the starting state unless we don't need to observe the start
+        if observed_start:
+            try:
+                matching_runs.drop(index=0, inplace=True)
+            except KeyError:  # first state is not the specified one, ignore
+                pass
+        # Set the start counters, or report an error if the state is not found
+        if matching_runs.empty:
+            # TODO Raise custom exception
+            raise RuntimeError(f"State {state} not found in data.")
+        else:
+            # self._runs_start = matching_runs.index[0]
+            # self._start = self._runs.iloc[:self._runs_start].Duration.sum()
+            start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
+            self._start_at_epoch(start_row)
+
     def _start_at_epoch(self, epoch_number):
         """Specify which epoch we should consider at the first.
 
@@ -105,7 +140,7 @@ class Experiment:
         """
         self._start = epoch_number
         self._runs_start = self._runs[
-            self._runs.Duration.cumsum() > epoch_number][0]
+            self._runs.Duration.cumsum() > epoch_number].index[0]
 
     def reset(self):
         """Set the starting epoch to the first one."""
