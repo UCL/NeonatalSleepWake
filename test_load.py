@@ -45,10 +45,10 @@ def test_load_correct():
     # TODO Use a proper fixture instead of reading the results here
     with open('tests/data/fixtures.yaml') as data_file:
         fixture_data = yaml.safe_load(data_file)[basename]
-        # expected_data = fixture_data['data']  # not yet checked
+        expected_data = pd.read_csv(fixture_data['data'])
         expected_meta = fixture_data['meta']
     loaded_data, loaded_meta = load_file(fixture_data['raw'])
-    assert loaded_data.any(axis=None)  # TODO compare against expected
+    assert (loaded_data.values == expected_data.values).all()
     for field in loaded_meta:
         # Time is a bit harder to check because we cannot represent it as a
         # time object directly in YAML
