@@ -20,12 +20,12 @@ def sample_data():
     return data, yaml_meta
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def sample_experiment(sample_data):
     return Experiment(*sample_data)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def no_nrem_experiment():
     """An experiment that does not contain any nREM observations."""
     with open('tests/data/fixtures.yaml') as data_file:
@@ -33,7 +33,7 @@ def no_nrem_experiment():
     return Experiment(*load_file(yaml_contents['raw']))
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def awake_nrem_experiment():
     """An experiment that contains a run of Awake, and a single nREM epoch."""
     with open('tests/data/fixtures.yaml') as data_file:
