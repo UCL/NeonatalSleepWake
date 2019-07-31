@@ -1,12 +1,3 @@
-small.xlsx:
-  meta:
-    Baby_reference: '12345.0'
-    Corrected_gestational_age_weeks: 23.45
-    High_risk_yes_no: false
-    Neonatal_unit_yes_no: true
-    Postnatal_age_days: 14
-    Start_time: '01:23'
-
 sample_experiment:
   raw: tests/data/sample_experiment.xlsx
   data: tests/data/sample_experiment.csv
