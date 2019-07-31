@@ -119,7 +119,7 @@ class Experiment:
         # Ignore the starting state unless we don't need to observe the start
         if observed_start:
             try:
-                matching_runs.drop(index=0, inplace=True)
+                matching_runs = matching_runs.drop(index=0)
             except KeyError:  # first state is not the specified one, ignore
                 pass
         # Set the start counters, or report an error if the state is not found
