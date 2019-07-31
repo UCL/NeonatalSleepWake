@@ -69,3 +69,37 @@ def test_summary_correct():
     assert filecmp.cmp("summary.csv",
                        "tests/data/summary_correct.csv",
                        shallow=False)
+
+
+def test_alignment_initial(sample_experiment):
+    """Check that an experiment considers all epochs by default."""
+    assert sample_experiment._start == 0
+    assert sample_experiment._runs_start == 0
+
+
+def test_alignment_state_at_start(sample_experiment):
+    """Check that we ignore the first epoch by default when aligning."""
+    sample_experiment.start_at_state("Awake")
+    assert sample_experiment._start == 7
+    assert sample_experiment._runs_start == 5
+    assert (sample_experiment._data.iloc[sample_experiment._start, 0]
+            == "Awake")
+
+
+def test_alignment_state_at_start_no_observe(sample_experiment):
+    """Check that we can match the first epoch if not requiring observed start."""
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    assert sample_experiment._start == 0
+    assert sample_experiment._runs_start == 0
+    assert (sample_experiment._data.iloc[sample_experiment._start, 0]
+            == "Awake")
+
+
+def test_alignment_middle(sample_experiment):
+    """Check that we correctly align to states not in the beginning."""
+    sample_experiment.start_at_state("REM")
+    new_start = sample_experiment._start
+    assert new_start == 2
+    assert sample_experiment._runs_start == 1
+    assert sample_experiment._data.iloc[new_start, 0] == "REM"
+    assert all(sample_experiment._data.iloc[:new_start, 0] != "REM")
