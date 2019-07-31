@@ -142,6 +142,22 @@ def test_alignment_to_first_instance(sample_experiment, state):
     assert all(sample_experiment._data.iloc[:new_start, 0] != state)
 
 
+def test_alignment_repeated(sample_experiment):
+    """Check that each alignment is independent from previous calls."""
+    # Align to REM and record results
+    sample_experiment.start_at_state("REM")
+    start_after_first = sample_experiment._start
+    runs_start_after_first = sample_experiment._runs_start
+    # Align to nREM and check that the object has changed
+    sample_experiment.start_at_state("nREM")
+    assert sample_experiment._start != start_after_first
+    assert sample_experiment._runs_start != runs_start_after_first
+    # Align to REM again and make sure that we get the same results as before
+    sample_experiment.start_at_state("REM")
+    assert sample_experiment._start == start_after_first
+    assert sample_experiment._runs_start == runs_start_after_first
+
+
 def test_alignment_error_if_not_found(no_nrem_experiment):
     """Check for an error if the given state is not observed at all."""
     with pytest.raises(RuntimeError):
