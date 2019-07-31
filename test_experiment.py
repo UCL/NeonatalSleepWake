@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from experiment import Experiment, ExperimentCollection
+from load_file import load_file
 
 
 @pytest.fixture(scope="module")
@@ -22,6 +23,25 @@ def sample_data():
 @pytest.fixture(scope="module")
 def sample_experiment(sample_data):
     return Experiment(*sample_data)
+
+
+@pytest.fixture(scope="module")
+def no_nrem_experiment():
+    """An experiment that does not contain any nREM observations."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['no_nrem_experiment']
+    return Experiment(*load_file(yaml_contents['raw']))
+
+
+@pytest.fixture(scope="module")
+def awake_nrem_experiment():
+    """An experiment that contains a run of Awake, and a single nREM epoch."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['awake_nrem_experiment']
+    data = pd.read_csv(yaml_contents['data'])
+    data['Sleep_wake'] = data['Sleep_wake'].astype(
+        pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"]))
+    return Experiment(data, {})
 
 
 def test_metadata(sample_experiment, sample_data):
@@ -120,3 +140,15 @@ def test_alignment_to_first_instance(sample_experiment, state):
     new_start = sample_experiment._start
     assert sample_experiment._data.iloc[new_start, 0] == state
     assert all(sample_experiment._data.iloc[:new_start, 0] != state)
+
+
+def test_alignment_error_if_not_found(no_nrem_experiment):
+    """Check for an error if the given state is not observed at all."""
+    with pytest.raises(RuntimeError):
+        no_nrem_experiment.start_at_state("nREM", observed_start=False)
+
+
+def test_alignment_error_if_only_found_at_start(awake_nrem_experiment):
+    """Check for an error if the given state is only observed at the start."""
+    with pytest.raises(RuntimeError):
+        awake_nrem_experiment.start_at_state("Awake")
