@@ -8,3 +8,12 @@ sample_experiment:
     Neonatal_unit_yes_no: true
     Postnatal_age_days: 14
     Start_time: '01:23'
+
+no_nrem_experiment:
+  # a real experiment (278601) with no nREM observations
+  raw: tests/data/no_nrem_experiment.xlsx
+
+awake_nrem_experiment:
+  # an experiment with one run of Awake, and one epoch of nREM
+  data: tests/data/awake_nrem_experiment.csv
+
