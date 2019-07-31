@@ -77,22 +77,20 @@ def test_alignment_initial(sample_experiment):
     assert sample_experiment._runs_start == 0
 
 
-def test_alignment_state_at_start(sample_experiment):
+def test_alignment_ignore_first_state(sample_experiment):
     """Check that we ignore the first epoch by default when aligning."""
-    sample_experiment.start_at_state("Awake")
-    assert sample_experiment._start == 7
-    assert sample_experiment._runs_start == 5
-    assert (sample_experiment._data.iloc[sample_experiment._start, 0]
-            == "Awake")
+    state = sample_experiment._data.iloc[0, 0]  # the first observed state
+    sample_experiment.start_at_state(state)
+    assert sample_experiment._start != 0
+    assert sample_experiment._runs_start != 0
 
 
-def test_alignment_state_at_start_no_observe(sample_experiment):
+def test_alignment_match_first_state_if_no_observe(sample_experiment):
     """Check that we can match the first epoch if not requiring observed start."""
-    sample_experiment.start_at_state("Awake", observed_start=False)
+    state = sample_experiment._data.iloc[0, 0]
+    sample_experiment.start_at_state(state, observed_start=False)
     assert sample_experiment._start == 0
     assert sample_experiment._runs_start == 0
-    assert (sample_experiment._data.iloc[sample_experiment._start, 0]
-            == "Awake")
 
 
 @pytest.mark.parametrize("state", ["REM", "nREM", "Awake", "Trans"])
