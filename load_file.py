@@ -56,9 +56,16 @@ def convert_metadata(raw_metadata, datemode):
             raw_metadata["Start_time"].value, datemode).time()
     except TypeError:  # some times may be missing
         metadata["Start_time"] = None
-    # Store the baby reference as an int - although string might also be fine?
-    # TODO Some non-int values found, so storing as string for now
-    metadata["Baby_reference"] = str(raw_metadata["Baby_reference"].value)
+    # Store the baby reference as a string. Note that xlrd reads integers as
+    # floats, so we need some conversion to stay close to the original format.
+    # Also, some patients have two references in the form X/Y; in those cases,
+    # the value will have been read as text already.
+    original_value = raw_metadata["Baby_reference"].value
+    try:
+        reference = int(original_value)
+    except ValueError:
+        reference = original_value
+    metadata["Baby_reference"] = str(reference)
     # Convert boolean attributes (assume everything non-"yes" is False)
     for field in ["Neonatal_unit_yes_no", "High_risk_yes_no"]:
         metadata[field] = raw_metadata[field].value == "yes"

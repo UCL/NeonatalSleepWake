@@ -2,7 +2,7 @@ sample_experiment:
   raw: tests/data/sample_experiment.xlsx
   data: tests/data/sample_experiment.csv
   meta:
-    Baby_reference: '12345.0'
+    Baby_reference: '12345'
     Corrected_gestational_age_weeks: 23.45
     High_risk_yes_no: false
     Neonatal_unit_yes_no: true
