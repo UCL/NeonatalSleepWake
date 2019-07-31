@@ -95,11 +95,30 @@ def test_alignment_state_at_start_no_observe(sample_experiment):
             == "Awake")
 
 
-def test_alignment_middle(sample_experiment):
-    """Check that we correctly align to states not in the beginning."""
-    sample_experiment.start_at_state("REM")
+@pytest.mark.parametrize("state", ["REM", "nREM", "Awake", "Trans"])
+def test_alignment_to_first_transition(sample_experiment, state):
+    """Check that we correctly align to any state.
+
+    Specifically, check that the new starting epoch matches the specified
+    state, and that it is the first occurrence of that state, except perhaps
+    in the beginning (since the first state is ignored by default).
+    """
+    sample_experiment.start_at_state(state)
     new_start = sample_experiment._start
-    assert new_start == 2
-    assert sample_experiment._runs_start == 1
-    assert sample_experiment._data.iloc[new_start, 0] == "REM"
-    assert all(sample_experiment._data.iloc[:new_start, 0] != "REM")
+    assert sample_experiment._data.iloc[new_start, 0] == state
+    assert (all(sample_experiment._data.iloc[:new_start, 0] != state)
+            or sample_experiment._data.iloc[0, 0] == state)
+
+
+@pytest.mark.parametrize("state", ["REM", "nREM", "Awake", "Trans"])
+def test_alignment_to_first_instance(sample_experiment, state):
+    """Check that we can always match the first occurrence of a state.
+
+    Specifically, check that if we explicitly don't require to observe the
+    start of a run, we will always get the first occurrence of a state, even
+    if that is at the beginning of the data.
+    """
+    sample_experiment.start_at_state(state, observed_start=False)
+    new_start = sample_experiment._start
+    assert sample_experiment._data.iloc[new_start, 0] == state
+    assert all(sample_experiment._data.iloc[:new_start, 0] != state)
