@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from ..common import SLEEP_STATE
+from ..common import SLEEP_STATE, AlignmentError
 from ..experiment import Experiment, ExperimentCollection
 from ..load_file import load_file
 
@@ -159,11 +159,11 @@ def test_alignment_repeated(sample_experiment):
 
 def test_alignment_error_if_not_found(no_nrem_experiment):
     """Check for an error if the given state is not observed at all."""
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AlignmentError):
         no_nrem_experiment.start_at_state("nREM", observed_start=False)
 
 
 def test_alignment_error_if_only_found_at_start(awake_nrem_experiment):
     """Check for an error if the given state is only observed at the start."""
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AlignmentError):
         awake_nrem_experiment.start_at_state("Awake")

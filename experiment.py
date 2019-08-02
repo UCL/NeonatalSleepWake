@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import SLEEP_STATE
+from .common import SLEEP_STATE, SleepStateNotRecognisedError, AlignmentError
 from .load_file import load_file
 
 
@@ -108,13 +108,20 @@ class Experiment:
         observed (and we therefore can't know how long the patient had been in
         that state already).
 
+        This method throws an AlignmentError if the specified alignment is not
+        possible, such as if the desired starting state does not appear in the
+        data. It throws SleepStateNotRecognisedError if an invalid state name
+        is passed.
+
         :param state: the name of the state as a string (e.g. Awake, nREM)
         :param observed_start: if True, require that we know when the given
         has started, otherwise use its first occurrence
+        :raises: AlignmentError, SleepStateNotRecognisedError
         """
         # TODO Make this check consistent/abstract into a method or decorator
         if state not in SLEEP_STATE.categories:
-            raise ValueError(f"Unrecognised sleep state: {state}")
+            raise SleepStateNotRecognisedError(
+                f"Unrecognised sleep state: {state}")
         # Look into the compiled runs to find all occurrences of the state
         matching_runs = self._runs[self._runs.From == state]
         # Ignore the starting state unless we don't need to observe the start
@@ -125,8 +132,7 @@ class Experiment:
                 pass
         # Set the start counters, or report an error if the state is not found
         if matching_runs.empty:
-            # TODO Raise custom exception
-            raise RuntimeError(f"State {state} not found in data.")
+            raise AlignmentError(f"State {state} not found in data.")
         else:
             # self._runs_start = matching_runs.index[0]
             # self._start = self._runs.iloc[:self._runs_start].Duration.sum()
