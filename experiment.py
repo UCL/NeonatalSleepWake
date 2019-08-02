@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from load_file import load_file
+from .load_file import load_file
 
 
 class Experiment:
