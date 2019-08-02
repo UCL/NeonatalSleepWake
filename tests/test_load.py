@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from .load_file import load_file, FIELDS, METADATA_COLUMNS
+from ..load_file import load_file, FIELDS, METADATA_COLUMNS
 
 
 @pytest.mark.skipif("NEONATAL_TEST_DIR" not in os.environ,

@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 import yaml
 
-from .experiment import Experiment, ExperimentCollection
-from .load_file import load_file
+from ..experiment import Experiment, ExperimentCollection
+from ..load_file import load_file
 
 
 @pytest.fixture(scope="module")
