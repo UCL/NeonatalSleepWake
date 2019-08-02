@@ -3,6 +3,8 @@ import warnings
 import pandas as pd
 import xlrd
 
+from .common import SLEEP_STATE
+
 # TODO Put this in a config file for easier editing by anyone
 # The data recorded at each epoch
 FIELDS = ["30_sec_epoch_no", "Sleep_wake", "Painful_stimulation_yes_no",
@@ -33,8 +35,7 @@ def convert_data_types(data):
     a categorical type with its fixed set of values."""
     new_data = pd.DataFrame(index=data.index)
     # Convert first column (sleep state) to a category with four values
-    cat_type = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
-    new_data[data.columns[0]] = data.iloc[:, 0].astype(cat_type)
+    new_data[data.columns[0]] = data.iloc[:, 0].astype(SLEEP_STATE)
     # Convert yes/no to True/False. In principle this could be done with the
     # true_values/false_values argument to read_excel, but it doesn't seem to
     # work here (possibly because Pandas does that conversion column-wise, and

@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from ..common import SLEEP_STATE
 from ..load_file import load_file, FIELDS, METADATA_COLUMNS
 
 
@@ -19,15 +20,13 @@ def test_all_load_ok():
     The test will look for files in the directory pointed to by
     $NEONATAL_TEST_DIR. Very basic check, but useful at an early stage.
     """
-    # TODO Get this from the module rather than redefining it
-    cat_type = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
     dir_path = os.environ["NEONATAL_TEST_DIR"]
     real_files = glob.glob(dir_path + "*.xlsx")
     assert real_files, f"No data files found at {dir_path}!"
     for filename in real_files:
         data, metadata = load_file(filename)
         # Check that we are getting one category and three boolean columns...
-        assert all(d == dt for d, dt in zip(data.dtypes, [cat_type] + 3 * [np.dtype(bool)]))
+        assert all(d == dt for d, dt in zip(data.dtypes, [SLEEP_STATE] + 3 * [np.dtype(bool)]))
         # ...with the right names...
         assert all(data.columns == FIELDS[1:])
         # ...and that we don't have any missing values from the conversion

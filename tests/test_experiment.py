@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from ..common import SLEEP_STATE
 from ..experiment import Experiment, ExperimentCollection
 from ..load_file import load_file
 
@@ -15,8 +16,7 @@ def sample_data():
         yaml_contents = yaml.safe_load(data_file)['sample_experiment']
     yaml_meta = yaml_contents['meta']
     data = pd.read_csv(yaml_contents['data'])
-    data['Sleep_wake'] = data['Sleep_wake'].astype(
-        pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"]))
+    data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
     return data, yaml_meta
 
 
@@ -39,8 +39,7 @@ def awake_nrem_experiment():
     with open('tests/data/fixtures.yaml') as data_file:
         yaml_contents = yaml.safe_load(data_file)['awake_nrem_experiment']
     data = pd.read_csv(yaml_contents['data'])
-    data['Sleep_wake'] = data['Sleep_wake'].astype(
-        pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"]))
+    data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
     return Experiment(data, {})
 
 

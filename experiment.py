@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from .common import SLEEP_STATE
 from .load_file import load_file
 
 
@@ -27,7 +28,7 @@ class Experiment:
     def count(self, state):
         """Return how many times a sleep state occurs in this experiment."""
         sleep_states = self._data.iloc[self._start:, 0]
-        if state not in sleep_states.dtype.categories:
+        if state not in SLEEP_STATE.categories:
             raise ValueError(f"Unrecognised sleep state: {state}")
         return (sleep_states == state).sum()
 
@@ -112,7 +113,7 @@ class Experiment:
         has started, otherwise use its first occurrence
         """
         # TODO Make this check consistent/abstract into a method or decorator
-        if state not in self._data.Sleep_wake.dtype.categories:
+        if state not in SLEEP_STATE.categories:
             raise ValueError(f"Unrecognised sleep state: {state}")
         # Look into the compiled runs to find all occurrences of the state
         matching_runs = self._runs[self._runs.From == state]
