@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import SLEEP_STATE, SleepStateNotRecognisedError, AlignmentError
+from .common import AlignmentError, check_state
 from .load_file import load_file
 
 
@@ -28,8 +28,7 @@ class Experiment:
     def count(self, state):
         """Return how many times a sleep state occurs in this experiment."""
         sleep_states = self._data.iloc[self._start:, 0]
-        if state not in SLEEP_STATE.categories:
-            raise ValueError(f"Unrecognised sleep state: {state}")
+        check_state(state)
         return (sleep_states == state).sum()
 
     def durations(self, state):
@@ -37,13 +36,20 @@ class Experiment:
 
         Returns an array of durations in epochs.
         """
+        check_state(state)
         # Filter only the runs of the state we want...
         runs = self._runs[self._runs.From == state].Duration
         # ...and only from the time of interest onwards
         return runs[self._runs_start:].values
 
     def count_transitions(self, from_states, to_states):
-        """Return how many transitions occur between the given states."""
+        """Return how many transitions occur between the given states.
+
+        :param from_states: starting state names, as a list of strings
+        :param to_states: target state names, as a list of strings
+        """
+        for state in from_states + to_states:
+            check_state(state)
         matching = (self._runs.From.isin(from_states)
                     & self._runs.To.isin(to_states))[self._runs_start:]
         # Return the number of transitions found
@@ -119,9 +125,7 @@ class Experiment:
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
         # TODO Make this check consistent/abstract into a method or decorator
-        if state not in SLEEP_STATE.categories:
-            raise SleepStateNotRecognisedError(
-                f"Unrecognised sleep state: {state}")
+        check_state(state)
         # Look into the compiled runs to find all occurrences of the state
         matching_runs = self._runs[self._runs.From == state]
         # Ignore the starting state unless we don't need to observe the start

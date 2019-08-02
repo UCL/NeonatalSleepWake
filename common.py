@@ -19,3 +19,10 @@ class AlignmentError(RuntimeError):
     does not appear in the data.
     """
     pass
+
+
+def check_state(state):
+    """Check that the given state name is valid, or raise an error."""
+    if state not in SLEEP_STATE.categories:
+        raise SleepStateNotRecognisedError(
+            f"Unrecognised sleep state: {state}")
