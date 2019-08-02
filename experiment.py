@@ -124,7 +124,6 @@ class Experiment:
         has started, otherwise use its first occurrence
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
-        # TODO Make this check consistent/abstract into a method or decorator
         check_state(state)
         # Look into the compiled runs to find all occurrences of the state
         matching_runs = self._runs[self._runs.From == state]
