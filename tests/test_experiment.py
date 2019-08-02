@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from ..common import SLEEP_STATE, AlignmentError
+from ..common import SLEEP_STATE, AlignmentError, SleepStateNotRecognisedError
 from ..experiment import Experiment, ExperimentCollection
 from ..load_file import load_file
 
@@ -167,3 +167,9 @@ def test_alignment_error_if_only_found_at_start(awake_nrem_experiment):
     """Check for an error if the given state is only observed at the start."""
     with pytest.raises(AlignmentError):
         awake_nrem_experiment.start_at_state("Awake")
+
+
+def test_alignment_error_if_invalid_state(sample_experiment):
+    """Check for an error if an invalid state is specified."""
+    with pytest.raises(SleepStateNotRecognisedError):
+        sample_experiment.start_at_state("NotAnActualState")
