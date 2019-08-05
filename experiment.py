@@ -156,6 +156,32 @@ class Experiment:
         """Set the starting epoch to the first one."""
         self._start = self._runs_start = 0
 
+    def get_alignment_data(self):
+        """Return a dataframe with the information to write out alignments."""
+        df = pd.DataFrame()
+        df["Sleep_wake"] = self._data.Sleep_wake[self._start:]
+        # Add the information on state changes
+        state_changed = (
+            self._data.Sleep_wake[self._start:]
+            != self._data.Sleep_wake[self._start:].shift(1))
+        df["State_change_from_preceding_epoch"] = state_changed
+        df["Details_state_change"] = [""] * df.shape[0]
+        state_change_details = [f"{row.From}_{row.To}"
+                                for row
+                                in self._runs[self._runs_start:].itertuples()]
+        # Exclude the last run (from last state to NaN)
+        df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
+        df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
+        # The below needs to be a list because otherwise the indexing is messed up
+        # TODO Can this be done directly with the Series somehow?
+        df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
+            list(self._runs[self._runs_start:-1].Duration)
+        # Copy remaining columns, except for subgroups
+        # TODO Can probably do this better?
+        for col in self._data.columns[1:-1]:
+            df[col] = self._data[col][self._start:]
+        return df.astype(str)
+
 
 class ExperimentCollection:
     """A collection of experiment results and metadata."""
