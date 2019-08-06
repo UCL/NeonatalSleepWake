@@ -226,3 +226,12 @@ class ExperimentCollection:
                 summary = exp.summarise()
                 out_file.write(",".join(str(element) for element in summary))
                 out_file.write("\n")
+
+    def experiments(self):
+        """Get a generator to iterate over the experiments contained here.
+
+        Note: this will load each experiment, not just return the filenames,
+        so it may be slow.
+        """
+        for exp_file in self._filenames:
+            yield Experiment(*load_file(exp_file))
