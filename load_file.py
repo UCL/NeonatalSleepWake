@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import pandas as pd
@@ -81,6 +82,7 @@ def convert_metadata(raw_metadata, datemode):
 def load_file(path):
     """Load the data from the specified Excel workbook."""
     # TODO Can this be done with a context manager?
+    print("Loading file", os.path.basename(path))
     book = xlrd.open_workbook(path, ragged_rows=True)
     # Assume there is only one sheet - warn if not!
     if book.nsheets > 1:
