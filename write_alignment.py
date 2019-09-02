@@ -13,8 +13,8 @@ from .experiment import ExperimentCollection
 COLUMN_HEADERS = ["Baby_reference",	"Start_time",
                   "Neonatal_unit_yes_no", "High_risk_yes_no",
                   "Postnatal_age_days", "Corrected_gestational_age_weeks",
-                  "No.epochs_this_alignment", "Presence_Awake",
-                  "Presence_REM", "Presence_Trans", "Presence_nREM"]
+                  "No.epochs_this_alignment", "No.epochs_Awake",
+                  "No.epochs_REM", "No.epochs_Trans", "No.epochs_nREM"]
 
 
 def write_aligned_experiment(experiment, state, observed_start, output_filename):
