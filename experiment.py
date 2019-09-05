@@ -23,13 +23,13 @@ class Experiment:
         self._runs_start = 0  # which run to start reading from
 
     def number_epochs(self):
-        return len(self._data[self._start:])
+        return self._runs[self._runs_start:].Duration.sum()
 
     def count(self, state):
         """Return how many times a sleep state occurs in this experiment."""
-        sleep_states = self._data.iloc[self._start:, 0]
         check_state(state)
-        return (sleep_states == state).sum()
+        considered_runs = self._runs.iloc[self._runs_start:]
+        return considered_runs[considered_runs.From == state].Duration.sum()
 
     def durations(self, state):
         """Compute how long the patient spends in the given state each time.
