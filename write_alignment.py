@@ -4,7 +4,7 @@ contained in a single directory.
 """
 
 import argparse
-import os
+from pathlib import Path
 import warnings
 
 from .common import SLEEP_STATE, AlignmentError
@@ -32,16 +32,13 @@ def write_aligned_experiment(experiment, state, observed_start, output_filename)
                              experiment.count("Awake"), experiment.count("REM"),
                              experiment.count("Trans"), experiment.count("nREM")],
                             ))
-    with open(output_filename, 'w') as output_file:
-        # write header
-        output_file.write(",".join(COLUMN_HEADERS) + "\n")
-        for col in range(n_columns):
-            # write metadata
-            output_file.write(meta_row + ",")
-            # write an aspect of the alignment
-            output_file.write(alignment_data.columns[col] + ",")
-            output_file.write(",".join(alignment_data.iloc[:, col]))
-            output_file.write("\n")
+    for col in range(n_columns):
+        # write metadata
+        output_file.write(meta_row + ",")
+        # write an aspect of the alignment
+        output_file.write(alignment_data.columns[col] + ",")
+        output_file.write(",".join(alignment_data.iloc[:, col]))
+        output_file.write("\n")
 
 
 parser = argparse.ArgumentParser(
@@ -59,13 +56,17 @@ args = parser.parse_args()
 
 collection = ExperimentCollection()
 collection.add_directory(args.directory)
-for exp in collection.experiments():
-    # Some references include /. Remove it to avoid filename problems.
-    clean_ref = exp.Baby_reference.replace("/", "")
-    out_path = os.path.join(args.out_directory, f"alignment_{clean_ref}.csv")
-    try:
-        write_aligned_experiment(exp, args.state, not args.first_occurrence,
-                                 out_path)
-    except AlignmentError:
-        warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
 
+# Use a meaningful output filename that shows how the alignments were generated
+# e.g. alignment_myDirectory_first_REM or alignment_myDirectory_jump_Awake
+out_filename = (f"alignment_{Path(directory).name}"
+                f"_{'first' if args.first_occurrence else 'jump'}_{args.state}.csv")
+with open(out_filename, 'w') as output_file:
+    # Write the header information
+    output_file.write(",".join(COLUMN_HEADERS) + "\n")
+    for exp in collection.experiments():
+        try:
+            write_aligned_experiment(exp, args.state, not args.first_occurrence,
+                                     output_file)
+        except AlignmentError:
+            warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
