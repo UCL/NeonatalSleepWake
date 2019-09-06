@@ -63,8 +63,8 @@ collection.add_directory(args.directory)
 out_base_name = (f"alignment_{Path(args.directory).name}"
                  f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
 # Write the alignments for all experiments in a single file
-out_data_name = out_base_name + ".csv"
-with open(out_data_name, 'w') as output_file:
+out_data_path = Path(args.out_directory, out_base_name + ".csv")
+with open(out_data_path, 'w') as output_file:
     # Write the header information
     output_file.write(",".join(COLUMN_HEADERS) + "\n")
     for exp in collection.experiments():
@@ -75,22 +75,22 @@ with open(out_data_name, 'w') as output_file:
             warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
 
 # And write a small text file describing how the alignment was done.
-out_meta_name = out_base_name + ".txt"
+out_meta_path = Path(args.out_directory, out_base_name + ".txt")
 meta_template = """
-This file contains contains metadata about the alignments
-in file {results_file}.
+This file contains contains metadata about the alignments in file
+{results_file}.
 The data was read from {input_location}.
 The alignment was performed by finding {mode} state {state_name}.
 This file was generated at {time} on {date}.
 """
 now = datetime.datetime.now()
 meta_text = meta_template.format(
-    results_file=out_data_name,
+    results_file=out_data_path.absolute(),
     input_location=Path(args.directory).absolute(),
     mode="occurrences of" if args.first_occurrence else "transitions to",
     state_name=args.state,
     time=now.strftime("%H:%M"),
     date=now.strftime("%d %b %Y")
 )
-with open(out_meta_name, "w") as output_meta_file:
+with open(out_meta_path, "w") as output_meta_file:
     output_meta_file.write(meta_text)
