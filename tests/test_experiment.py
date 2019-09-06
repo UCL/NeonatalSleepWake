@@ -173,3 +173,11 @@ def test_alignment_error_if_invalid_state(sample_experiment):
     """Check for an error if an invalid state is specified."""
     with pytest.raises(SleepStateNotRecognisedError):
         sample_experiment.start_at_state("NotAnActualState")
+
+
+def test_alignment_multiple(sample_experiment):
+    """Check that we get the correct number of alignments."""
+    sample_experiment.start_at_state("REM")
+    data = sample_experiment.get_alignment_data()
+    assert isinstance(data, list)
+    assert len(data) == 2

@@ -157,7 +157,12 @@ class Experiment:
         self._start = self._runs_start = 0
 
     def get_alignment_data(self):
-        """Return a dataframe with the information to write out alignments."""
+        """Return a list containing the information to write out alignments.
+
+        Each element of the list is a dataframe corresponding to a subseries of
+        the data.
+        """
+        all_data = []
         df = pd.DataFrame()
         df["Sleep_wake"] = self._data.Sleep_wake[self._start:]
         # Add the information on state changes
@@ -180,7 +185,8 @@ class Experiment:
         # TODO Can probably do this better?
         for col in self._data.columns[1:-1]:
             df[col] = self._data[col][self._start:]
-        return df.astype(str)
+        all_data.append(df.astype(str))
+        return all_data
 
 
 class ExperimentCollection:
