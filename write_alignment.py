@@ -64,6 +64,7 @@ out_base_name = (f"alignment_{Path(args.directory).name}"
                  f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
 # Write the alignments for all experiments in a single file
 out_data_path = Path(args.out_directory, out_base_name + ".csv")
+failed_files = 0  # how many files we couldn't align
 with open(out_data_path, 'w') as output_data_file:
     # Write the header information
     output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
@@ -73,6 +74,7 @@ with open(out_data_path, 'w') as output_data_file:
                                      output_data_file)
         except AlignmentError:
             warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
+            failed_files += 1
 
 # And write a small text file describing how the alignment was done.
 out_meta_path = Path(args.out_directory, out_base_name + ".txt")
@@ -81,6 +83,7 @@ This file contains contains metadata about the alignments in file
 {results_file}.
 The data was read from {input_location}.
 The alignment was performed by finding {mode} state {state_name}.
+There were {number_failures} files which could not be aligned.
 This file was generated at {time} on {date}.
 """
 now = datetime.datetime.now()
@@ -89,6 +92,7 @@ meta_text = meta_template.format(
     input_location=Path(args.directory).absolute(),
     mode="occurrences of" if args.first_occurrence else "transitions to",
     state_name=args.state,
+    number_failures=failed_files,
     time=now.strftime("%H:%M"),
     date=now.strftime("%d %b %Y")
 )
