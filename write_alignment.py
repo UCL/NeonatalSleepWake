@@ -4,6 +4,7 @@ contained in a single directory.
 """
 
 import argparse
+import datetime
 from pathlib import Path
 import warnings
 
@@ -59,9 +60,11 @@ collection.add_directory(args.directory)
 
 # Use a meaningful output filename that shows how the alignments were generated
 # e.g. alignment_myDirectory_first_REM or alignment_myDirectory_jump_Awake
-out_filename = (f"alignment_{Path(directory).name}"
-                f"_{'first' if args.first_occurrence else 'jump'}_{args.state}.csv")
-with open(out_filename, 'w') as output_file:
+out_base_name = (f"alignment_{Path(args.directory).name}"
+                 f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
+# Write the alignments for all experiments in a single file
+out_data_name = out_base_name + ".csv"
+with open(out_data_name, 'w') as output_file:
     # Write the header information
     output_file.write(",".join(COLUMN_HEADERS) + "\n")
     for exp in collection.experiments():
@@ -70,3 +73,24 @@ with open(out_filename, 'w') as output_file:
                                      output_file)
         except AlignmentError:
             warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
+
+# And write a small text file describing how the alignment was done.
+out_meta_name = out_base_name + ".txt"
+meta_template = """
+This file contains contains metadata about the alignments
+in file {results_file}.
+The data was read from {input_location}.
+The alignment was performed by finding {mode} state {state_name}.
+This file was generated at {time} on {date}.
+"""
+now = datetime.datetime.now()
+meta_text = meta_template.format(
+    results_file=out_data_name,
+    input_location=Path(args.directory).absolute(),
+    mode="occurrences of" if args.first_occurrence else "transitions to",
+    state_name=args.state,
+    time=now.strftime("%H:%M"),
+    date=now.strftime("%d %b %Y")
+)
+with open(out_meta_name, "w") as output_meta_file:
+    output_meta_file.write(meta_text)
