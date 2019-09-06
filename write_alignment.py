@@ -20,26 +20,27 @@ COLUMN_HEADERS = ["Baby_reference",	"Start_time",
 
 def write_aligned_experiment(experiment, state, observed_start, output_file):
     experiment.start_at_state(state, observed_start)
-    alignment_data = experiment.get_alignment_data()
-    n_epochs, n_columns = alignment_data.shape
-    # The row to repeat for every aspect of this alignment
-    meta_row = ",".join(map(str,
-                            [experiment.Baby_reference, experiment.Start_time,
-                             experiment.Neonatal_unit_yes_no,
-                             experiment.High_risk_yes_no,
-                             experiment.Postnatal_age_days,
-                             experiment.Corrected_gestational_age_weeks,
-                             n_epochs,
-                             experiment.count("Awake"), experiment.count("REM"),
-                             experiment.count("Trans"), experiment.count("nREM")],
-                            ))
-    for col in range(n_columns):
-        # write metadata
-        output_file.write(meta_row + ",")
-        # write an aspect of the alignment
-        output_file.write(alignment_data.columns[col] + ",")
-        output_file.write(",".join(alignment_data.iloc[:, col]))
-        output_file.write("\n")
+    all_alignments = experiment.get_alignment_data()
+    for alignment_data in all_alignments:
+        n_epochs, n_columns = alignment_data.shape
+        # The row to repeat for every aspect of this alignment
+        meta_row = ",".join(map(str,
+                                [experiment.Baby_reference, experiment.Start_time,
+                                 experiment.Neonatal_unit_yes_no,
+                                 experiment.High_risk_yes_no,
+                                 experiment.Postnatal_age_days,
+                                 experiment.Corrected_gestational_age_weeks,
+                                 n_epochs,
+                                 experiment.count("Awake"), experiment.count("REM"),
+                                 experiment.count("Trans"), experiment.count("nREM")],
+                                ))
+        for col in range(n_columns):
+            # write metadata
+            output_file.write(meta_row + ",")
+            # write an aspect of the alignment
+            output_file.write(alignment_data.columns[col] + ",")
+            output_file.write(",".join(alignment_data.iloc[:, col]))
+            output_file.write("\n")
 
 
 parser = argparse.ArgumentParser(
