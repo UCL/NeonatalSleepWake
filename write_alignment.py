@@ -18,7 +18,7 @@ COLUMN_HEADERS = ["Baby_reference",	"Start_time",
                   "No.epochs_REM", "No.epochs_Trans", "No.epochs_nREM"]
 
 
-def write_aligned_experiment(experiment, state, observed_start, output_filename):
+def write_aligned_experiment(experiment, state, observed_start, output_file):
     experiment.start_at_state(state, observed_start)
     alignment_data = experiment.get_alignment_data()
     n_epochs, n_columns = alignment_data.shape
@@ -64,13 +64,13 @@ out_base_name = (f"alignment_{Path(args.directory).name}"
                  f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
 # Write the alignments for all experiments in a single file
 out_data_path = Path(args.out_directory, out_base_name + ".csv")
-with open(out_data_path, 'w') as output_file:
+with open(out_data_path, 'w') as output_data_file:
     # Write the header information
-    output_file.write(",".join(COLUMN_HEADERS) + "\n")
+    output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
     for exp in collection.experiments():
         try:
             write_aligned_experiment(exp, args.state, not args.first_occurrence,
-                                     output_file)
+                                     output_data_file)
         except AlignmentError:
             warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
 
