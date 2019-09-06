@@ -21,6 +21,7 @@ class Experiment:
         # Assume we want to use all the data
         self._start = 0  # which data row to start reading from
         self._runs_start = 0  # which run to start reading from
+        self._breakpoints = []  # where to break different alignments
 
     def number_epochs(self):
         return self._runs[self._runs_start:].Duration.sum()
@@ -101,8 +102,13 @@ class Experiment:
         # by checking the state at the total time spent so far
         # (we need reset_index to insert the states in the order given,
         # ignoring their index)
-        to_indices = self._runs.Duration.cumsum()[:-1]
+        jump_times = self._runs.Duration.cumsum()
+        to_indices = jump_times[:-1]
         self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
+        # Also record the start and stop time of each run, for convenience
+        # Each run lasts from Start until Stop, inclusive.
+        self._runs["Start"] = jump_times.shift(1, fill_value=0)
+        self._runs["Stop"] = jump_times - 1
 
     def start_at_state(self, state, observed_start=True):
         """Shift the data so that it starts at the specified state.
@@ -137,6 +143,16 @@ class Experiment:
         if matching_runs.empty:
             raise AlignmentError(f"State {state} not found in data.")
         else:
+            # Store the first and final epoch of each run in a list of tuples
+            self._breakpoints = ([
+                # Each run ends just before the next one starts...
+                (start, next_start - 1)
+                for (start, next_start)
+                in zip(matching_runs.Start, matching_runs.Start[1:])
+                ]
+                # ...except for the final one, so add that manually
+                + [(matching_runs.Start.iloc[-1], self._runs.Stop.iloc[-1])]
+            )
             # self._runs_start = matching_runs.index[0]
             # self._start = self._runs.iloc[:self._runs_start].Duration.sum()
             start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
@@ -155,6 +171,7 @@ class Experiment:
     def reset(self):
         """Set the starting epoch to the first one."""
         self._start = self._runs_start = 0
+        self._breakpoints.clear()
 
     def get_alignment_data(self):
         """Return a list containing the information to write out alignments.
