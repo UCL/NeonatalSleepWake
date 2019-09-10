@@ -120,6 +120,10 @@ class Experiment:
         observed (and we therefore can't know how long the patient had been in
         that state already).
 
+        Internally, this will find the appropriate points to "break" the data
+        into sub-series, such that each series starts with the specified state
+        and runs until its next occurrence.
+
         This method throws an AlignmentError if the specified alignment is not
         possible, such as if the desired starting state does not appear in the
         data. It throws SleepStateNotRecognisedError if an invalid state name
@@ -153,8 +157,8 @@ class Experiment:
                 # ...except for the final one, so add that manually
                 + [(matching_runs.Start.iloc[-1], self._runs.Stop.iloc[-1])]
             )
-            # self._runs_start = matching_runs.index[0]
-            # self._start = self._runs.iloc[:self._runs_start].Duration.sum()
+            # TODO Also store the first and last run here, to avoid recomputing
+            # it later?
             start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
             self._start_at_epoch(start_row)
 
@@ -180,29 +184,31 @@ class Experiment:
         the data.
         """
         all_data = []
-        df = pd.DataFrame()
-        df["Sleep_wake"] = self._data.Sleep_wake[self._start:]
-        # Add the information on state changes
-        state_changed = (
-            self._data.Sleep_wake[self._start:]
-            != self._data.Sleep_wake[self._start:].shift(1))
-        df["State_change_from_preceding_epoch"] = state_changed
-        df["Details_state_change"] = [""] * df.shape[0]
-        state_change_details = [f"{row.From}_{row.To}"
-                                for row
-                                in self._runs[self._runs_start:].itertuples()]
-        # Exclude the last run (from last state to NaN)
-        df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
-        df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
-        # The below needs to be a list because otherwise the indexing is messed up
-        # TODO Can this be done directly with the Series somehow?
-        df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
-            list(self._runs[self._runs_start:-1].Duration)
-        # Copy remaining columns, except for subgroups
-        # TODO Can probably do this better?
-        for col in self._data.columns[1:-1]:
-            df[col] = self._data[col][self._start:]
-        all_data.append(df.astype(str))
+        for (start, stop) in self._breakpoints:
+            # Find which run the start and stop epoch correspond to
+            runs_start = self._runs[self._runs.Start == start].index[0]
+            runs_stop = self._runs[self._runs.Stop == stop].index[0]
+            df = pd.DataFrame()
+            df["Sleep_wake"] = self._data.Sleep_wake[start:stop+1]
+            # Add the information on state changes
+            state_changed = df["Sleep_wake"] != df["Sleep_wake"].shift(1)
+            df["State_change_from_preceding_epoch"] = state_changed
+            df["Details_state_change"] = [""] * df.shape[0]
+            state_change_details = [f"{row.From}_{row.To}"
+                                    for row
+                                    in self._runs[runs_start:runs_stop+1].itertuples()]
+            # Exclude the last run (from last state to NaN)
+            df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
+            df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
+            # The below needs to be a list because otherwise the indexing is messed up
+            # TODO Can this be done directly with the Series somehow?
+            df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
+                list(self._runs[runs_start:runs_stop].Duration)
+            # Copy remaining columns, except for subgroups
+            # TODO Can probably do this better?
+            for col in self._data.columns[1:-1]:
+                df[col] = self._data[col][start:stop+1]
+            all_data.append(df.astype(str))
         return all_data
 
 
