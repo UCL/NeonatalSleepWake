@@ -12,6 +12,7 @@ from ..load_file import load_file
 
 @pytest.fixture(scope="module")
 def sample_data():
+    """The data and metadata underlying a small test experiment."""
     with open('tests/data/fixtures.yaml') as data_file:
         yaml_contents = yaml.safe_load(data_file)['sample_experiment']
     yaml_meta = yaml_contents['meta']
@@ -20,8 +21,17 @@ def sample_data():
     return data, yaml_meta
 
 
+@pytest.fixture(scope="module")
+def sample_alignments():
+    """The correct alignments of the small test experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['sample_experiment']
+    return yaml_contents["alignments"]
+
+
 @pytest.fixture
 def sample_experiment(sample_data):
+    """An Experiment object representing the small test experiment."""
     return Experiment(*sample_data)
 
 
@@ -175,9 +185,12 @@ def test_alignment_error_if_invalid_state(sample_experiment):
         sample_experiment.start_at_state("NotAnActualState")
 
 
-def test_alignment_multiple(sample_experiment):
-    """Check that we get the correct number of alignments."""
+def test_alignment_multiple(sample_experiment, sample_alignments):
+    """Check that we get the correct alignments."""
     sample_experiment.start_at_state("REM")
     data = sample_experiment.get_alignment_data()
     assert isinstance(data, list)
     assert len(data) == 2
+    correct_alignments = sample_alignments["REM_jump"]
+    for computed, correct in zip(data, correct_alignments):
+        assert (computed.Sleep_wake == correct).all()
