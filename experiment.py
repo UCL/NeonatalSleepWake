@@ -191,19 +191,20 @@ class Experiment:
             df = pd.DataFrame()
             df["Sleep_wake"] = self._data.Sleep_wake[start:stop+1]
             # Add the information on state changes
-            state_changed = df["Sleep_wake"] != df["Sleep_wake"].shift(1)
+            # Not using != because of an apparent issue with pandas (#28384)
+            state_changed = ~(df["Sleep_wake"] == df["Sleep_wake"].shift(1))
             df["State_change_from_preceding_epoch"] = state_changed
             df["Details_state_change"] = [""] * df.shape[0]
             state_change_details = [f"{row.From}_{row.To}"
                                     for row
-                                    in self._runs[runs_start:runs_stop+1].itertuples()]
+                                    in self._runs[runs_start-1:runs_stop+1].itertuples()]
             # Exclude the last run (from last state to NaN)
             df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
             df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
             # The below needs to be a list because otherwise the indexing is messed up
             # TODO Can this be done directly with the Series somehow?
             df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
-                list(self._runs[runs_start:runs_stop].Duration)
+                list(self._runs[runs_start-1:runs_stop].Duration)
             # Copy remaining columns, except for subgroups
             # TODO Can probably do this better?
             for col in self._data.columns[1:-1]:
