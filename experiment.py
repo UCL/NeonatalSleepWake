@@ -197,9 +197,9 @@ class Experiment:
             df["Details_state_change"] = [""] * df.shape[0]
             state_change_details = [f"{row.From}_{row.To}"
                                     for row
-                                    in self._runs[runs_start-1:runs_stop+1].itertuples()]
-            # Exclude the last run (from last state to NaN)
-            df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
+                                    # Exclude the last run (from last state to NaN)
+                                    in self._runs[runs_start-1:runs_stop].itertuples()]
+            df.loc[state_changed, "Details_state_change"] = state_change_details
             df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
             # The below needs to be a list because otherwise the indexing is messed up
             # TODO Can this be done directly with the Series somehow?
