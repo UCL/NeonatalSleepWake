@@ -192,5 +192,10 @@ def test_alignment_multiple(sample_experiment, sample_alignments):
     assert isinstance(data, list)
     assert len(data) == 2
     correct_alignments = sample_alignments["REM_jump"]
+    # Check that the sleep states are reported correctly
     for computed, correct in zip(data, correct_alignments):
         assert (computed.Sleep_wake == correct).all()
+    # Check that we mark the transition for the first epoch of each alignment
+    for computed in data:
+        # The returned alignments contain all values as strings
+        assert computed["State_change_from_preceding_epoch"].iloc[0] == "True"
