@@ -199,3 +199,15 @@ def test_alignment_multiple(sample_experiment, sample_alignments):
     for computed in data:
         # The returned alignments contain all values as strings
         assert computed["State_change_from_preceding_epoch"].iloc[0] == "True"
+
+
+def test_alignment_first_not_recorded(sample_experiment):
+    """Check that we do not record a state change for the very first epoch."""
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    data = sample_experiment.get_alignment_data()
+    assert len(data) == 2
+    # The first alignment starts at the first epoch, so the state should not
+    # be marked as changed.
+    assert data[0]["State_change_from_preceding_epoch"].iloc[0] == "False"
+    # But the second alignment should still record a state change at its start.
+    assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"

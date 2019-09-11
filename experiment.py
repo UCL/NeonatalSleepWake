@@ -193,18 +193,25 @@ class Experiment:
             # Add the information on state changes
             # Not using != because of an apparent issue with pandas (#28384)
             state_changed = ~(df["Sleep_wake"] == df["Sleep_wake"].shift(1))
+            # Don't consider the very first epoch as a state change
+            if start == 0:
+                state_changed[0] = False
+            # To find the state change details, start looking from the run
+            # directly before this alignment starts, unless we are at the very
+            # first epoch (in which case we will not count this as a change).
+            diff_runs_start = runs_start - 1 if start != 0 else runs_start
             df["State_change_from_preceding_epoch"] = state_changed
             df["Details_state_change"] = [""] * df.shape[0]
             state_change_details = [f"{row.From}_{row.To}"
                                     for row
                                     # Exclude the last run (from last state to NaN)
-                                    in self._runs[runs_start-1:runs_stop].itertuples()]
+                                    in self._runs[diff_runs_start:runs_stop].itertuples()]
             df.loc[state_changed, "Details_state_change"] = state_change_details
             df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
             # The below needs to be a list because otherwise the indexing is messed up
             # TODO Can this be done directly with the Series somehow?
             df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
-                list(self._runs[runs_start-1:runs_stop].Duration)
+                list(self._runs[diff_runs_start:runs_stop].Duration)
             # Copy remaining columns, except for subgroups
             # TODO Can probably do this better?
             for col in self._data.columns[1:-1]:
