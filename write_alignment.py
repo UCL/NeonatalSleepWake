@@ -21,7 +21,7 @@ COLUMN_HEADERS = ["Baby_reference",	"Start_time",
 def write_aligned_experiment(experiment, state, observed_start, output_file):
     experiment.start_at_state(state, observed_start)
     all_alignments = experiment.get_alignment_data()
-    for alignment_data in all_alignments:
+    for (alignment_index, alignment_data) in enumerate(all_alignments):
         n_epochs, n_columns = alignment_data.shape
         # The row to repeat for every aspect of this alignment
         meta_row = ",".join(map(str,
@@ -31,8 +31,10 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
                                  experiment.Postnatal_age_days,
                                  experiment.Corrected_gestational_age_weeks,
                                  n_epochs,
-                                 experiment.count("Awake"), experiment.count("REM"),
-                                 experiment.count("Trans"), experiment.count("nREM")],
+                                 experiment.count("Awake", alignment_index),
+                                 experiment.count("REM", alignment_index),
+                                 experiment.count("Trans", alignment_index),
+                                 experiment.count("nREM", alignment_index)],
                                 ))
         for col in range(n_columns):
             # write metadata

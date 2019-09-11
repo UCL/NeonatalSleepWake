@@ -23,16 +23,17 @@ class Experiment:
         self._runs_start = 0  # which run to start reading from
         self._breakpoints = []  # where to break different alignments
 
-    def number_epochs(self):
-        return self._runs[self._runs_start:].Duration.sum()
+    def number_epochs(self, alignment=None):
+        limits = self._get_slice_for_alignment(alignment)
+        return self._runs[limits].Duration.sum()
 
-    def count(self, state):
+    def count(self, state, alignment=None):
         """Return how many times a sleep state occurs in this experiment."""
         check_state(state)
-        considered_runs = self._runs.iloc[self._runs_start:]
+        considered_runs = self._runs[self._get_slice_for_alignment(alignment)]
         return considered_runs[considered_runs.From == state].Duration.sum()
 
-    def durations(self, state):
+    def durations(self, state, alignment=None):
         """Compute how long the patient spends in the given state each time.
 
         Returns an array of durations in epochs.
@@ -41,9 +42,9 @@ class Experiment:
         # Filter only the runs of the state we want...
         runs = self._runs[self._runs.From == state].Duration
         # ...and only from the time of interest onwards
-        return runs[self._runs_start:].values
+        return runs[self._get_slice_for_alignment(alignment)].values
 
-    def count_transitions(self, from_states, to_states):
+    def count_transitions(self, from_states, to_states, alignment=None):
         """Return how many transitions occur between the given states.
 
         :param from_states: starting state names, as a list of strings
@@ -52,9 +53,9 @@ class Experiment:
         for state in from_states + to_states:
             check_state(state)
         matching = (self._runs.From.isin(from_states)
-                    & self._runs.To.isin(to_states))[self._runs_start:]
-        # Return the number of transitions found
-        return matching.sum()
+                    & self._runs.To.isin(to_states))
+        # Return the number of transitions found in the region of interest
+        return matching[self._get_slice_for_alignment(alignment)].sum()
 
     def summarise(self):
         """Get a summary of the information from this experiment."""
@@ -171,6 +172,24 @@ class Experiment:
         self._start = epoch_number
         self._runs_start = self._runs[
             self._runs.Duration.cumsum() > epoch_number].index[0]
+
+    def _get_slice_for_alignment(self, alignment):
+        """Compute the span of runs that a given alignment encompasses.
+
+        Returns a slice with the indices of the first and last run. This
+        is designed to be used with indexing operators which exclude the last
+        element, like `[]` or `.loc` from Pandas.
+        """
+        if alignment is None:
+            return slice(self._runs_start, None)
+        if not self._breakpoints:
+            raise AlignmentError("No alignments found.")
+        if alignment >= len(self._breakpoints):
+            raise IndexError(f"Invalid alignment index: {alignment}")
+        start, stop = self._breakpoints[alignment]
+        runs_start = self._runs[self._runs.Start == start].index[0]
+        runs_stop = self._runs[self._runs.Stop == stop].index[0]
+        return slice(runs_start, runs_stop + 1)
 
     def reset(self):
         """Set the starting epoch to the first one."""
