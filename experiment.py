@@ -244,7 +244,7 @@ class Experiment:
             state_changed = ~(df["Sleep_wake"] == df["Sleep_wake"].shift(1))
             # Don't consider the very first epoch as a state change
             if start == 0:
-                state_changed[0] = False
+                state_changed.iloc[0] = False
             # To find the state change details, start looking from the run
             # directly before this alignment starts, unless we are at the very
             # first epoch (in which case we will not count this as a change).
