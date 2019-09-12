@@ -186,15 +186,15 @@ def test_alignment_error_if_invalid_state(sample_experiment):
 
 
 def test_alignment_multiple(sample_experiment, sample_alignments):
-    """Check that we get the correct alignments."""
+    """Check that we get the correct alignments for a simple case."""
+    correct_alignments = sample_alignments["REM_jump"]
     sample_experiment.start_at_state("REM")
     data = sample_experiment.get_alignment_data()
     assert isinstance(data, list)
-    assert len(data) == 2
-    correct_alignments = sample_alignments["REM_jump"]
+    assert len(data) == len(correct_alignments)
     # Check that the sleep states are reported correctly
     for computed, correct in zip(data, correct_alignments):
-        assert (computed.Sleep_wake == correct).all()
+        assert (computed.Sleep_wake == correct["states"]).all()
     # Check that we mark the transition for the first epoch of each alignment
     for computed in data:
         # The returned alignments contain all values as strings
@@ -211,3 +211,27 @@ def test_alignment_first_not_recorded(sample_experiment):
     assert data[0]["State_change_from_preceding_epoch"].iloc[0] == "False"
     # But the second alignment should still record a state change at its start.
     assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"
+
+
+def test_get_slice_error_no_alignment(sample_experiment):
+    """Check for an error when no alignments have been created."""
+    with pytest.raises(AlignmentError):
+        sample_experiment._get_slice_for_alignment(0)
+
+
+def test_get_slice_error_not_enough_alignments(awake_nrem_experiment):
+    """Check for an error when using an invalid alignment index."""
+    awake_nrem_experiment.start_at_state("Awake", observed_start=False)
+    # There is only one alignment, with index 0, so this should give an error:
+    with pytest.raises(IndexError):
+        awake_nrem_experiment._get_slice_for_alignment(1)
+
+
+def test_get_slice_correct(sample_experiment, sample_alignments):
+    """Check that we get the right slice limits in a simple case."""
+    correct_alignments = sample_alignments["REM_jump"]
+    sample_experiment.start_at_state("REM")
+    for (index, alignment) in enumerate(correct_alignments):
+        computed_slice = sample_experiment._get_slice_for_alignment(index)
+        assert computed_slice.start == alignment["start_run"]
+        assert computed_slice.stop == alignment["stop_run"] + 1

@@ -3,14 +3,18 @@ sample_experiment:
   data: tests/data/sample_experiment.csv
   alignments:
     REM_jump:
-      -
-        - REM
-        - nREM
-        - nREM
-        - Trans
-      -
-        - REM
-        - Awake
+      - start_run: 1
+        stop_run: 3
+        states:
+          - REM
+          - nREM
+          - nREM
+          - Trans
+      - start_run: 4
+        stop_run: 5
+        states:
+          - REM
+          - Awake
   meta:
     Baby_reference: '12345'
     Corrected_gestational_age_weeks: 23.45
