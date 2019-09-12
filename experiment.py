@@ -9,7 +9,30 @@ from .load_file import load_file
 
 
 class Experiment:
-    """A class to represent the results from an individual patient."""
+    """A class to represent the results from an individual patient.
+
+    An Experiment is created by passing it the underlying data and metadata.
+    However, most of the information it provides is retrieved by considering
+    the data in chunks called runs, representing a set of continuous epochs
+    spent in the same state. These runs are computed when the experiment is
+    first created.
+
+    Experiments are designed so that they can be aligned to a desired state
+    (see the `start_at_state` method for more options for doing so).
+    This means splitting the data into sub-series, such that each series starts
+    with the specified state. Doing this may result in some of the early epochs
+    being ignored (until the desired state is encountered). Once the alignment
+    has been performed, statistics about the experimental data can be obtained
+    through a number of methods (`count`, `durations`, etc). These accept an
+    `alignment` argument to choose which sub-series of the data to consider.
+    Alignments are counted starting with 0 for the first sub-series. If no
+    `alignment` is specified, then the statistics returned refer to all subsets
+    combined (but still excluding any states ignored by the alignment process).
+
+    It is also possible to query the full dataset, without any alignment, in
+    which case all epochs are considered. This can be achieved by not calling
+    `start_at_state()`, or by calling `reset()` to undo any previous alignment.
+    """
     def __init__(self, data, metadata):
         self._data = data
         self._metadata = metadata
@@ -24,6 +47,7 @@ class Experiment:
         self._breakpoints = []  # where to break different alignments
 
     def number_epochs(self, alignment=None):
+        """Return how many epochs are contained in this experiment."""
         limits = self._get_slice_for_alignment(alignment)
         return self._runs[limits].Duration.sum()
 
@@ -47,8 +71,14 @@ class Experiment:
     def count_transitions(self, from_states, to_states, alignment=None):
         """Return how many transitions occur between the given states.
 
+        Can optionally consider only a subset of the data through the
+        alignment argument, otherwise all data will be considered
+        (excluding any that has been ignored through an alignment process).
+
         :param from_states: starting state names, as a list of strings
         :param to_states: target state names, as a list of strings
+        :param alignment: the index of a subseries to consider, as a zero-base
+        integer, or None to consider the whole data.
         """
         for state in from_states + to_states:
             check_state(state)
