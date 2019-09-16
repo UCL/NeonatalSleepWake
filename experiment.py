@@ -176,7 +176,10 @@ class Experiment:
                 pass
         # Set the start counters, or report an error if the state is not found
         if matching_runs.empty:
-            raise AlignmentError(f"State {state} not found in data.")
+            message = (f"No transition to state {state} found in data."
+                       if observed_start
+                       else f"State {state} not found in data.")
+            raise AlignmentError(message)
         else:
             # Store the first and final epoch of each run in a list of tuples
             self._breakpoints = ([

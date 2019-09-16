@@ -77,8 +77,9 @@ with open(out_data_path, 'w') as output_data_file:
         try:
             write_aligned_experiment(exp, args.state, not args.first_occurrence,
                                      output_data_file)
-        except AlignmentError:
-            warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
+        except AlignmentError as error:
+            warnings.warn(
+                f"Could not align data for reference {exp.Baby_reference}: {error}")
             failed_files += 1
 
 # And write a small text file describing how the alignment was done.
