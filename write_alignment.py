@@ -25,9 +25,10 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
         # Start counting alignments from 1 rather than 0, for clarity
         reference = f"{experiment.Baby_reference}_alignment_{alignment_index+1}"
         n_epochs, n_columns = alignment_data.shape
+        start_time = experiment.get_alignment_start_time(alignment_index)
         # The row to repeat for every aspect of this alignment
         meta_row = ",".join(map(str,
-                                [reference, experiment.Start_time,
+                                [reference, start_time,
                                  experiment.Neonatal_unit_yes_no,
                                  experiment.High_risk_yes_no,
                                  experiment.Postnatal_age_days,

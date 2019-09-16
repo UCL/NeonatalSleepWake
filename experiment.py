@@ -1,3 +1,4 @@
+import datetime
 import os
 import warnings
 
@@ -39,6 +40,8 @@ class Experiment:
         # Would this be convenient?
         for key, value in metadata.items():
             setattr(self, key, value)
+        # Assume epochs last for 30 seconds
+        self.epoch_duration_seconds = 30
         # Precompute some statistics
         self._compute_sojourns()
         # Assume we want to use all the data
@@ -270,6 +273,24 @@ class Experiment:
                 df[col] = self._data[col][start:stop+1]
             all_data.append(df.astype(str))
         return all_data
+
+    def get_alignment_start_time(self, alignment_index):
+        """Get the time that the specified alignment started."""
+        # Check that the requested alignment exists
+        if not self._breakpoints:
+            raise AlignmentError("No alignments found.")
+        if alignment_index >= len(self._breakpoints):
+            raise IndexError(f"Invalid alignment index: {alignment_index}")
+        # Calculate how many seconds have passed since the experiment started
+        starting_run = self._get_slice_for_alignment(alignment_index).start
+        epochs_before_alignment = int(self._runs.Duration[:starting_run].sum())
+        offset = datetime.timedelta(
+            seconds=epochs_before_alignment*self.epoch_duration_seconds)
+        # We can only add time differences to full datetime objects,
+        # so use a dummy date (today), and then just drop the date part
+        base_datetime = datetime.datetime.combine(datetime.datetime.today(),
+                                                  self.Start_time)
+        return (base_datetime + offset).time()
 
 
 class ExperimentCollection:

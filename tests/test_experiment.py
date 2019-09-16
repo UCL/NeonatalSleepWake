@@ -1,4 +1,5 @@
 """Tests for the methods of the Experiment class."""
+import datetime
 import filecmp
 
 import pandas as pd
@@ -16,6 +17,9 @@ def sample_data():
     with open('tests/data/fixtures.yaml') as data_file:
         yaml_contents = yaml.safe_load(data_file)['sample_experiment']
     yaml_meta = yaml_contents['meta']
+    # Convert the time from a string into a time object
+    yaml_meta["Start_time"] = datetime.datetime.strptime(
+        yaml_meta["Start_time"], "%H:%M").time()
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
     return data, yaml_meta
@@ -235,3 +239,23 @@ def test_get_slice_correct(sample_experiment, sample_alignments):
         computed_slice = sample_experiment._get_slice_for_alignment(index)
         assert computed_slice.start == alignment["start_run"]
         assert computed_slice.stop == alignment["stop_run"] + 1
+
+
+def test_get_alignment_time_start(sample_experiment, sample_data):
+    """Check for the right start time if aligning at the very first epoch."""
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    assert (sample_experiment.get_alignment_start_time(0)
+            == sample_data[1]["Start_time"])
+
+
+def test_get_alignment_time(sample_experiment, sample_data, sample_alignments):
+    """Check that we get the expected start times for the simple experiment."""
+    sample_experiment.start_at_state("REM")
+    # Experiment starts at 01:23. The first alignment starts 2 epochs in,
+    # the second 6 epochs in. Each epoch is 30 seconds.
+    expected_times = ["01:24", "01:26"]
+    for index in [0, 1]:
+        assert (
+            sample_experiment.get_alignment_start_time(index).strftime("%H:%M")
+            == expected_times[index]
+        )
