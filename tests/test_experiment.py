@@ -1,4 +1,5 @@
 """Tests for the methods of the Experiment class."""
+import datetime
 import filecmp
 
 import pandas as pd
@@ -12,16 +13,29 @@ from ..load_file import load_file
 
 @pytest.fixture(scope="module")
 def sample_data():
+    """The data and metadata underlying a small test experiment."""
     with open('tests/data/fixtures.yaml') as data_file:
         yaml_contents = yaml.safe_load(data_file)['sample_experiment']
     yaml_meta = yaml_contents['meta']
+    # Convert the time from a string into a time object
+    yaml_meta["Start_time"] = datetime.datetime.strptime(
+        yaml_meta["Start_time"], "%H:%M").time()
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
     return data, yaml_meta
 
 
+@pytest.fixture(scope="module")
+def sample_alignments():
+    """The correct alignments of the small test experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['sample_experiment']
+    return yaml_contents["alignments"]
+
+
 @pytest.fixture
 def sample_experiment(sample_data):
+    """An Experiment object representing the small test experiment."""
     return Experiment(*sample_data)
 
 
@@ -173,3 +187,75 @@ def test_alignment_error_if_invalid_state(sample_experiment):
     """Check for an error if an invalid state is specified."""
     with pytest.raises(SleepStateNotRecognisedError):
         sample_experiment.start_at_state("NotAnActualState")
+
+
+def test_alignment_multiple(sample_experiment, sample_alignments):
+    """Check that we get the correct alignments for a simple case."""
+    correct_alignments = sample_alignments["REM_jump"]
+    sample_experiment.start_at_state("REM")
+    data = sample_experiment.get_alignment_data()
+    assert isinstance(data, list)
+    assert len(data) == len(correct_alignments)
+    # Check that the sleep states are reported correctly
+    for computed, correct in zip(data, correct_alignments):
+        assert (computed.Sleep_wake == correct["states"]).all()
+    # Check that we mark the transition for the first epoch of each alignment
+    for computed in data:
+        # The returned alignments contain all values as strings
+        assert computed["State_change_from_preceding_epoch"].iloc[0] == "True"
+
+
+def test_alignment_first_not_recorded(sample_experiment):
+    """Check that we do not record a state change for the very first epoch."""
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    data = sample_experiment.get_alignment_data()
+    assert len(data) == 2
+    # The first alignment starts at the first epoch, so the state should not
+    # be marked as changed.
+    assert data[0]["State_change_from_preceding_epoch"].iloc[0] == "False"
+    # But the second alignment should still record a state change at its start.
+    assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"
+
+
+def test_get_slice_error_no_alignment(sample_experiment):
+    """Check for an error when no alignments have been created."""
+    with pytest.raises(AlignmentError):
+        sample_experiment._get_slice_for_alignment(0)
+
+
+def test_get_slice_error_not_enough_alignments(awake_nrem_experiment):
+    """Check for an error when using an invalid alignment index."""
+    awake_nrem_experiment.start_at_state("Awake", observed_start=False)
+    # There is only one alignment, with index 0, so this should give an error:
+    with pytest.raises(IndexError):
+        awake_nrem_experiment._get_slice_for_alignment(1)
+
+
+def test_get_slice_correct(sample_experiment, sample_alignments):
+    """Check that we get the right slice limits in a simple case."""
+    correct_alignments = sample_alignments["REM_jump"]
+    sample_experiment.start_at_state("REM")
+    for (index, alignment) in enumerate(correct_alignments):
+        computed_slice = sample_experiment._get_slice_for_alignment(index)
+        assert computed_slice.start == alignment["start_run"]
+        assert computed_slice.stop == alignment["stop_run"] + 1
+
+
+def test_get_alignment_time_start(sample_experiment, sample_data):
+    """Check for the right start time if aligning at the very first epoch."""
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    assert (sample_experiment.get_alignment_start_time(0)
+            == sample_data[1]["Start_time"])
+
+
+def test_get_alignment_time(sample_experiment, sample_data, sample_alignments):
+    """Check that we get the expected start times for the simple experiment."""
+    sample_experiment.start_at_state("REM")
+    # Experiment starts at 01:23. The first alignment starts 2 epochs in,
+    # the second 6 epochs in. Each epoch is 30 seconds.
+    expected_times = ["01:24", "01:26"]
+    for index in [0, 1]:
+        assert (
+            sample_experiment.get_alignment_start_time(index).strftime("%H:%M")
+            == expected_times[index]
+        )

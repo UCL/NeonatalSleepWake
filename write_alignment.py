@@ -4,7 +4,8 @@ contained in a single directory.
 """
 
 import argparse
-import os
+import datetime
+from pathlib import Path
 import warnings
 
 from .common import SLEEP_STATE, AlignmentError
@@ -13,28 +14,31 @@ from .experiment import ExperimentCollection
 COLUMN_HEADERS = ["Baby_reference",	"Start_time",
                   "Neonatal_unit_yes_no", "High_risk_yes_no",
                   "Postnatal_age_days", "Corrected_gestational_age_weeks",
-                  "No.epochs_this_alignment", "Presence_Awake",
-                  "Presence_REM", "Presence_Trans", "Presence_nREM"]
+                  "No.epochs_this_alignment", "No.epochs_Awake",
+                  "No.epochs_REM", "No.epochs_Trans", "No.epochs_nREM"]
 
 
-def write_aligned_experiment(experiment, state, observed_start, output_filename):
+def write_aligned_experiment(experiment, state, observed_start, output_file):
     experiment.start_at_state(state, observed_start)
-    alignment_data = experiment.get_alignment_data()
-    n_epochs, n_columns = alignment_data.shape
-    # The row to repeat for every aspect of this alignment
-    meta_row = ",".join(map(str,
-                            [experiment.Baby_reference, experiment.Start_time,
-                             experiment.Neonatal_unit_yes_no,
-                             experiment.High_risk_yes_no,
-                             experiment.Postnatal_age_days,
-                             experiment.Corrected_gestational_age_weeks,
-                             n_epochs,
-                             experiment.count("Awake"), experiment.count("REM"),
-                             experiment.count("Trans"), experiment.count("nREM")],
-                            ))
-    with open(output_filename, 'w') as output_file:
-        # write header
-        output_file.write(",".join(COLUMN_HEADERS) + "\n")
+    all_alignments = experiment.get_alignment_data()
+    for (alignment_index, alignment_data) in enumerate(all_alignments):
+        # Start counting alignments from 1 rather than 0, for clarity
+        reference = f"{experiment.Baby_reference}_alignment_{alignment_index+1}"
+        n_epochs, n_columns = alignment_data.shape
+        start_time = experiment.get_alignment_start_time(alignment_index)
+        # The row to repeat for every aspect of this alignment
+        meta_row = ",".join(map(str,
+                                [reference, start_time,
+                                 experiment.Neonatal_unit_yes_no,
+                                 experiment.High_risk_yes_no,
+                                 experiment.Postnatal_age_days,
+                                 experiment.Corrected_gestational_age_weeks,
+                                 n_epochs,
+                                 experiment.count("Awake", alignment_index),
+                                 experiment.count("REM", alignment_index),
+                                 experiment.count("Trans", alignment_index),
+                                 experiment.count("nREM", alignment_index)],
+                                ))
         for col in range(n_columns):
             # write metadata
             output_file.write(meta_row + ",")
@@ -59,13 +63,45 @@ args = parser.parse_args()
 
 collection = ExperimentCollection()
 collection.add_directory(args.directory)
-for exp in collection.experiments():
-    # Some references include /. Remove it to avoid filename problems.
-    clean_ref = exp.Baby_reference.replace("/", "")
-    out_path = os.path.join(args.out_directory, f"alignment_{clean_ref}.csv")
-    try:
-        write_aligned_experiment(exp, args.state, not args.first_occurrence,
-                                 out_path)
-    except AlignmentError:
-        warnings.warn(f"Could not align data for reference {exp.Baby_reference}")
 
+# Use a meaningful output filename that shows how the alignments were generated
+# e.g. alignment_myDirectory_first_REM or alignment_myDirectory_jump_Awake
+out_base_name = (f"alignment_{Path(args.directory).name}"
+                 f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
+# Write the alignments for all experiments in a single file
+out_data_path = Path(args.out_directory, out_base_name + ".csv")
+failed_files = 0  # how many files we couldn't align
+with open(out_data_path, 'w') as output_data_file:
+    # Write the header information
+    output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
+    for exp in collection.experiments():
+        try:
+            write_aligned_experiment(exp, args.state, not args.first_occurrence,
+                                     output_data_file)
+        except AlignmentError as error:
+            warnings.warn(
+                f"Could not align data for reference {exp.Baby_reference}: {error}")
+            failed_files += 1
+
+# And write a small text file describing how the alignment was done.
+out_meta_path = Path(args.out_directory, out_base_name + ".txt")
+meta_template = """
+This file contains contains metadata about the alignments in file
+{results_file}.
+The data was read from {input_location}.
+The alignment was performed by finding {mode} state {state_name}.
+There were {number_failures} files which could not be aligned.
+This file was generated at {time} on {date}.
+"""
+now = datetime.datetime.now()
+meta_text = meta_template.format(
+    results_file=out_data_path.absolute(),
+    input_location=Path(args.directory).absolute(),
+    mode="occurrences of" if args.first_occurrence else "transitions to",
+    state_name=args.state,
+    number_failures=failed_files,
+    time=now.strftime("%H:%M"),
+    date=now.strftime("%d %b %Y")
+)
+with open(out_meta_path, "w") as output_meta_file:
+    output_meta_file.write(meta_text)

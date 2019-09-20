@@ -1,3 +1,4 @@
+import datetime
 import os
 import warnings
 
@@ -9,29 +10,57 @@ from .load_file import load_file
 
 
 class Experiment:
-    """A class to represent the results from an individual patient."""
+    """A class to represent the results from an individual patient.
+
+    An Experiment is created by passing it the underlying data and metadata.
+    However, most of the information it provides is retrieved by considering
+    the data in chunks called runs, representing a set of continuous epochs
+    spent in the same state. These runs are computed when the experiment is
+    first created.
+
+    Experiments are designed so that they can be aligned to a desired state
+    (see the `start_at_state` method for more options for doing so).
+    This means splitting the data into sub-series, such that each series starts
+    with the specified state. Doing this may result in some of the early epochs
+    being ignored (until the desired state is encountered). Once the alignment
+    has been performed, statistics about the experimental data can be obtained
+    through a number of methods (`count`, `durations`, etc). These accept an
+    `alignment` argument to choose which sub-series of the data to consider.
+    Alignments are counted starting with 0 for the first sub-series. If no
+    `alignment` is specified, then the statistics returned refer to all subsets
+    combined (but still excluding any states ignored by the alignment process).
+
+    It is also possible to query the full dataset, without any alignment, in
+    which case all epochs are considered. This can be achieved by not calling
+    `start_at_state()`, or by calling `reset()` to undo any previous alignment.
+    """
     def __init__(self, data, metadata):
         self._data = data
         self._metadata = metadata
         # Would this be convenient?
         for key, value in metadata.items():
             setattr(self, key, value)
+        # Assume epochs last for 30 seconds
+        self.epoch_duration_seconds = 30
         # Precompute some statistics
         self._compute_sojourns()
         # Assume we want to use all the data
         self._start = 0  # which data row to start reading from
         self._runs_start = 0  # which run to start reading from
+        self._breakpoints = []  # where to break different alignments
 
-    def number_epochs(self):
-        return len(self._data[self._start:])
+    def number_epochs(self, alignment=None):
+        """Return how many epochs are contained in this experiment."""
+        limits = self._get_slice_for_alignment(alignment)
+        return self._runs[limits].Duration.sum()
 
-    def count(self, state):
+    def count(self, state, alignment=None):
         """Return how many times a sleep state occurs in this experiment."""
-        sleep_states = self._data.iloc[self._start:, 0]
         check_state(state)
-        return (sleep_states == state).sum()
+        considered_runs = self._runs[self._get_slice_for_alignment(alignment)]
+        return considered_runs[considered_runs.From == state].Duration.sum()
 
-    def durations(self, state):
+    def durations(self, state, alignment=None):
         """Compute how long the patient spends in the given state each time.
 
         Returns an array of durations in epochs.
@@ -40,20 +69,26 @@ class Experiment:
         # Filter only the runs of the state we want...
         runs = self._runs[self._runs.From == state].Duration
         # ...and only from the time of interest onwards
-        return runs[self._runs_start:].values
+        return runs[self._get_slice_for_alignment(alignment)].values
 
-    def count_transitions(self, from_states, to_states):
+    def count_transitions(self, from_states, to_states, alignment=None):
         """Return how many transitions occur between the given states.
+
+        Can optionally consider only a subset of the data through the
+        alignment argument, otherwise all data will be considered
+        (excluding any that has been ignored through an alignment process).
 
         :param from_states: starting state names, as a list of strings
         :param to_states: target state names, as a list of strings
+        :param alignment: the index of a subseries to consider, as a zero-base
+        integer, or None to consider the whole data.
         """
         for state in from_states + to_states:
             check_state(state)
         matching = (self._runs.From.isin(from_states)
-                    & self._runs.To.isin(to_states))[self._runs_start:]
-        # Return the number of transitions found
-        return matching.sum()
+                    & self._runs.To.isin(to_states))
+        # Return the number of transitions found in the region of interest
+        return matching[self._get_slice_for_alignment(alignment)].sum()
 
     def summarise(self):
         """Get a summary of the information from this experiment."""
@@ -101,8 +136,13 @@ class Experiment:
         # by checking the state at the total time spent so far
         # (we need reset_index to insert the states in the order given,
         # ignoring their index)
-        to_indices = self._runs.Duration.cumsum()[:-1]
+        jump_times = self._runs.Duration.cumsum()
+        to_indices = jump_times[:-1]
         self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
+        # Also record the start and stop time of each run, for convenience
+        # Each run lasts from Start until Stop, inclusive.
+        self._runs["Start"] = jump_times.shift(1, fill_value=0)
+        self._runs["Stop"] = jump_times - 1
 
     def start_at_state(self, state, observed_start=True):
         """Shift the data so that it starts at the specified state.
@@ -113,6 +153,10 @@ class Experiment:
         of the state will be taken as the start, even if it is the first epoch
         observed (and we therefore can't know how long the patient had been in
         that state already).
+
+        Internally, this will find the appropriate points to "break" the data
+        into sub-series, such that each series starts with the specified state
+        and runs until its next occurrence.
 
         This method throws an AlignmentError if the specified alignment is not
         possible, such as if the desired starting state does not appear in the
@@ -135,10 +179,23 @@ class Experiment:
                 pass
         # Set the start counters, or report an error if the state is not found
         if matching_runs.empty:
-            raise AlignmentError(f"State {state} not found in data.")
+            message = (f"No transition to state {state} found in data."
+                       if observed_start
+                       else f"State {state} not found in data.")
+            raise AlignmentError(message)
         else:
-            # self._runs_start = matching_runs.index[0]
-            # self._start = self._runs.iloc[:self._runs_start].Duration.sum()
+            # Store the first and final epoch of each run in a list of tuples
+            self._breakpoints = ([
+                # Each run ends just before the next one starts...
+                (start, next_start - 1)
+                for (start, next_start)
+                in zip(matching_runs.Start, matching_runs.Start[1:])
+                ]
+                # ...except for the final one, so add that manually
+                + [(matching_runs.Start.iloc[-1], self._runs.Stop.iloc[-1])]
+            )
+            # TODO Also store the first and last run here, to avoid recomputing
+            # it later?
             start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
             self._start_at_epoch(start_row)
 
@@ -152,35 +209,88 @@ class Experiment:
         self._runs_start = self._runs[
             self._runs.Duration.cumsum() > epoch_number].index[0]
 
+    def _get_slice_for_alignment(self, alignment):
+        """Compute the span of runs that a given alignment encompasses.
+
+        Returns a slice with the indices of the first and last run. This
+        is designed to be used with indexing operators which exclude the last
+        element, like `[]` or `.loc` from Pandas.
+        """
+        if alignment is None:
+            return slice(self._runs_start, None)
+        if not self._breakpoints:
+            raise AlignmentError("No alignments found.")
+        if alignment >= len(self._breakpoints):
+            raise IndexError(f"Invalid alignment index: {alignment}")
+        start, stop = self._breakpoints[alignment]
+        runs_start = self._runs[self._runs.Start == start].index[0]
+        runs_stop = self._runs[self._runs.Stop == stop].index[0]
+        return slice(runs_start, runs_stop + 1)
+
     def reset(self):
         """Set the starting epoch to the first one."""
         self._start = self._runs_start = 0
+        self._breakpoints.clear()
 
     def get_alignment_data(self):
-        """Return a dataframe with the information to write out alignments."""
-        df = pd.DataFrame()
-        df["Sleep_wake"] = self._data.Sleep_wake[self._start:]
-        # Add the information on state changes
-        state_changed = (
-            self._data.Sleep_wake[self._start:]
-            != self._data.Sleep_wake[self._start:].shift(1))
-        df["State_change_from_preceding_epoch"] = state_changed
-        df["Details_state_change"] = [""] * df.shape[0]
-        state_change_details = [f"{row.From}_{row.To}"
-                                for row
-                                in self._runs[self._runs_start:].itertuples()]
-        # Exclude the last run (from last state to NaN)
-        df.loc[state_changed, "Details_state_change"] = state_change_details[:-1]
-        df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
-        # The below needs to be a list because otherwise the indexing is messed up
-        # TODO Can this be done directly with the Series somehow?
-        df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
-            list(self._runs[self._runs_start:-1].Duration)
-        # Copy remaining columns, except for subgroups
-        # TODO Can probably do this better?
-        for col in self._data.columns[1:-1]:
-            df[col] = self._data[col][self._start:]
-        return df.astype(str)
+        """Return a list containing the information to write out alignments.
+
+        Each element of the list is a dataframe corresponding to a subseries of
+        the data.
+        """
+        all_data = []
+        for (start, stop) in self._breakpoints:
+            # Find which run the start and stop epoch correspond to
+            runs_start = self._runs[self._runs.Start == start].index[0]
+            runs_stop = self._runs[self._runs.Stop == stop].index[0]
+            df = pd.DataFrame()
+            df["Sleep_wake"] = self._data.Sleep_wake[start:stop+1]
+            # Add the information on state changes
+            # Not using != because of an apparent issue with pandas (#28384)
+            state_changed = ~(df["Sleep_wake"] == df["Sleep_wake"].shift(1))
+            # Don't consider the very first epoch as a state change
+            if start == 0:
+                state_changed.iloc[0] = False
+            # To find the state change details, start looking from the run
+            # directly before this alignment starts, unless we are at the very
+            # first epoch (in which case we will not count this as a change).
+            diff_runs_start = runs_start - 1 if start != 0 else runs_start
+            df["State_change_from_preceding_epoch"] = state_changed
+            df["Details_state_change"] = [""] * df.shape[0]
+            state_change_details = [f"{row.From}_{row.To}"
+                                    for row
+                                    # Exclude the last run (from last state to NaN)
+                                    in self._runs[diff_runs_start:runs_stop].itertuples()]
+            df.loc[state_changed, "Details_state_change"] = state_change_details
+            df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
+            # The below needs to be a list because otherwise the indexing is messed up
+            # TODO Can this be done directly with the Series somehow?
+            df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
+                list(self._runs[diff_runs_start:runs_stop].Duration)
+            # Copy remaining columns, except for subgroups
+            # TODO Can probably do this better?
+            for col in self._data.columns[1:-1]:
+                df[col] = self._data[col][start:stop+1]
+            all_data.append(df.astype(str))
+        return all_data
+
+    def get_alignment_start_time(self, alignment_index):
+        """Get the time that the specified alignment started."""
+        # Check that the requested alignment exists
+        if not self._breakpoints:
+            raise AlignmentError("No alignments found.")
+        if alignment_index >= len(self._breakpoints):
+            raise IndexError(f"Invalid alignment index: {alignment_index}")
+        # Calculate how many seconds have passed since the experiment started
+        starting_run = self._get_slice_for_alignment(alignment_index).start
+        epochs_before_alignment = int(self._runs.Duration[:starting_run].sum())
+        offset = datetime.timedelta(
+            seconds=epochs_before_alignment*self.epoch_duration_seconds)
+        # We can only add time differences to full datetime objects,
+        # so use a dummy date (today), and then just drop the date part
+        base_datetime = datetime.datetime.combine(datetime.datetime.today(),
+                                                  self.Start_time)
+        return (base_datetime + offset).time()
 
 
 class ExperimentCollection:
@@ -209,10 +319,10 @@ class ExperimentCollection:
             "Neonatal_unit_yes_no", "High_risk_yes_no",
             "Postnatal_age_days",
             "Corrected_gestational_age_weeks",
-            "%REM", "Mean_duration_REM_if_onset_captured",
-            "%nREM", "Mean_duration_nREM_if_onset_captured",
-            "%Trans", "Mean_duration_Trans_if_onset_captured",
-            "%Awake", "Mean_duration_Awake_if_onset_captured",
+            "%REM", "Mean_duration_REM_epochs",
+            "%nREM", "Mean_duration_nREM_epochs",
+            "%Trans", "Mean_duration_Trans_epochs",
+            "%Awake", "Mean_duration_Awake_epochs",
             "No.state_changes_including_all_4_states",
             "No.state_changes_restricted_Awake_REM_nREM",
             "No.epochs", "Painful_stimulation_any_yes_no",
