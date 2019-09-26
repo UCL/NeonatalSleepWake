@@ -10,6 +10,7 @@ class AlignmentInterface(tk.Tk):
         self.data_directory = None
         self.state = "REM"
         self.first_observed = False
+        self.align_btn = None
         self.create_gui()
 
     def create_gui(self):
@@ -17,15 +18,19 @@ class AlignmentInterface(tk.Tk):
         choose_dir_btn.configure(command=self.choose_directory)
         choose_dir_btn.pack()
 
-        align_btn = ttk.Button(master=self, text="Get alignments")
+        align_btn = ttk.Button(master=self, text="Get alignments",
+                               state="disabled")
         align_btn.configure(command=self.do_alignment)
         align_btn.pack()
+        self.align_btn = align_btn
 
         # TODO Radio buttons and checkbox for alignment options
         # TODO File dialog to choose location of output
 
     def choose_directory(self):
         self.data_directory = askdirectory(initialdir=Path.home())
+        if self.data_directory:
+            self.align_btn["state"] = "normal"
         print(self.data_directory)
 
     def do_alignment(self):
