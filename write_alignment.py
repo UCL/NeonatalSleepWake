@@ -48,60 +48,68 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
             output_file.write("\n")
 
 
-parser = argparse.ArgumentParser(
-    description='Write out aligned data.',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('directory', help='the path to the data files')
-parser.add_argument('state', choices=SLEEP_STATE.categories,
-                    help='the first state to align to')
-parser.add_argument('--first-occurrence', action='store_true',
-                    help='use the first occurrence of the state, '
-                         'rather than the first transition to it')
-parser.add_argument('--out_directory', default='.',
-                    help='the directory to write results to')
-args = parser.parse_args()
+def create_alignments(directory, state, first_observed, out_directory):
+    collection = ExperimentCollection()
+    collection.add_directory(directory)
 
-collection = ExperimentCollection()
-collection.add_directory(args.directory)
+    # Use a meaningful output filename that shows how the alignments were generated
+    # e.g. alignment_myDirectory_first_REM or alignment_myDirectory_jump_Awake
+    out_base_name = (f"alignment_{Path(directory).name}"
+                     f"_{'first' if first_observed else 'jump'}_{state}")
+    # Write the alignments for all experiments in a single file
+    out_data_path = Path(out_directory, out_base_name + ".csv")
+    failed_files = 0  # how many files we couldn't align
+    with open(out_data_path, 'w') as output_data_file:
+        # Write the header information
+        output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
+        for exp in collection.experiments():
+            try:
+                write_aligned_experiment(exp, state, not first_observed,
+                                         output_data_file)
+            except AlignmentError as error:
+                warnings.warn(
+                    f"Could not align data for reference {exp.Baby_reference}: {error}")
+                failed_files += 1
 
-# Use a meaningful output filename that shows how the alignments were generated
-# e.g. alignment_myDirectory_first_REM or alignment_myDirectory_jump_Awake
-out_base_name = (f"alignment_{Path(args.directory).name}"
-                 f"_{'first' if args.first_occurrence else 'jump'}_{args.state}")
-# Write the alignments for all experiments in a single file
-out_data_path = Path(args.out_directory, out_base_name + ".csv")
-failed_files = 0  # how many files we couldn't align
-with open(out_data_path, 'w') as output_data_file:
-    # Write the header information
-    output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
-    for exp in collection.experiments():
-        try:
-            write_aligned_experiment(exp, args.state, not args.first_occurrence,
-                                     output_data_file)
-        except AlignmentError as error:
-            warnings.warn(
-                f"Could not align data for reference {exp.Baby_reference}: {error}")
-            failed_files += 1
+    # And write a small text file describing how the alignment was done.
+    out_meta_path = Path(out_directory, out_base_name + ".txt")
+    meta_template = """
+    This file contains contains metadata about the alignments in file
+    {results_file}.
+    The data was read from {input_location}.
+    The alignment was performed by finding {mode} state {state_name}.
+    There were {number_failures} files which could not be aligned.
+    This file was generated at {time} on {date}.
+    """
+    now = datetime.datetime.now()
+    meta_text = meta_template.format(
+        results_file=out_data_path.absolute(),
+        input_location=Path(directory).absolute(),
+        mode="occurrences of" if first_observed else "transitions to",
+        state_name=state,
+        number_failures=failed_files,
+        time=now.strftime("%H:%M"),
+        date=now.strftime("%d %b %Y")
+    )
+    with open(out_meta_path, "w") as output_meta_file:
+        output_meta_file.write(meta_text)
 
-# And write a small text file describing how the alignment was done.
-out_meta_path = Path(args.out_directory, out_base_name + ".txt")
-meta_template = """
-This file contains contains metadata about the alignments in file
-{results_file}.
-The data was read from {input_location}.
-The alignment was performed by finding {mode} state {state_name}.
-There were {number_failures} files which could not be aligned.
-This file was generated at {time} on {date}.
-"""
-now = datetime.datetime.now()
-meta_text = meta_template.format(
-    results_file=out_data_path.absolute(),
-    input_location=Path(args.directory).absolute(),
-    mode="occurrences of" if args.first_occurrence else "transitions to",
-    state_name=args.state,
-    number_failures=failed_files,
-    time=now.strftime("%H:%M"),
-    date=now.strftime("%d %b %Y")
-)
-with open(out_meta_path, "w") as output_meta_file:
-    output_meta_file.write(meta_text)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Write out aligned data.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('directory', help='the path to the data files')
+    parser.add_argument('state', choices=SLEEP_STATE.categories,
+                        help='the first state to align to')
+    parser.add_argument('--first-occurrence', action='store_true',
+                        help='use the first occurrence of the state, '
+                             'rather than the first transition to it')
+    parser.add_argument('--out_directory', default='.',
+                        help='the directory to write results to')
+    args = parser.parse_args()
+
+    create_alignments(args.directory,
+                      args.state,
+                      args.first_occurrence,
+                      args.out_directory)
