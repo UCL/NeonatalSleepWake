@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askdirectory
 
+from .write_alignment import create_alignments
+
 
 class AlignmentInterface(tk.Tk):
     def __init__(self):
@@ -43,9 +45,11 @@ class AlignmentInterface(tk.Tk):
         print(self.data_directory)
 
     def do_alignment(self):
-        # TODO Do the alignments...
         print(f"Will do alignment on {self.data_directory} by {self.state.get()} "
               f"{'(occurrence)' if self.first_observed.get() else '(jump)'}")
+        # Save at current directory for now
+        create_alignments(self.data_directory, self.state.get(),
+                          self.first_observed.get(), Path.cwd())
 
 
 if __name__ == "__main__":
