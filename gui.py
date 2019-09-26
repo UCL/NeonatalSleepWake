@@ -8,12 +8,13 @@ class AlignmentInterface(tk.Tk):
     def __init__(self):
         super().__init__()
         self.data_directory = None
-        self.state = "REM"
-        self.first_observed = False
+        self.state = tk.StringVar(value="REM")
+        self.first_observed = tk.BooleanVar(value=False)
         self.align_btn = None
         self.create_gui()
 
     def create_gui(self):
+        # Main buttons
         choose_dir_btn = ttk.Button(master=self, text="Choose data folder")
         choose_dir_btn.configure(command=self.choose_directory)
         choose_dir_btn.pack()
@@ -24,7 +25,15 @@ class AlignmentInterface(tk.Tk):
         align_btn.pack()
         self.align_btn = align_btn
 
-        # TODO Radio buttons and checkbox for alignment options
+        # Alignment options
+        for state in ["REM", "nREM", "Awake", "Trans"]:
+            btn = ttk.Radiobutton(master=self, text=state,
+                                  variable=self.state, value=state)
+            btn.pack()
+        check = ttk.Checkbutton(master=self, text="Align at first occurrence",
+                                variable=self.first_observed)
+        check.pack()
+
         # TODO File dialog to choose location of output
 
     def choose_directory(self):
@@ -35,8 +44,8 @@ class AlignmentInterface(tk.Tk):
 
     def do_alignment(self):
         # TODO Do the alignments...
-        print(f"Will do alignment on {self.data_directory} by {self.state} "
-              f"{'(occurrence)' if self.first_observed else '(jump)'}")
+        print(f"Will do alignment on {self.data_directory} by {self.state.get()} "
+              f"{'(occurrence)' if self.first_observed.get() else '(jump)'}")
 
 
 if __name__ == "__main__":
