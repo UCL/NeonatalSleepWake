@@ -2,6 +2,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askdirectory
+from tkinter.messagebox import showerror, showinfo
 
 from .write_alignment import create_alignments
 
@@ -48,8 +49,13 @@ class AlignmentInterface(tk.Tk):
         print(f"Will do alignment on {self.data_directory} by {self.state.get()} "
               f"{'(occurrence)' if self.first_observed.get() else '(jump)'}")
         # Save at current directory for now
-        create_alignments(self.data_directory, self.state.get(),
-                          self.first_observed.get(), Path.cwd())
+        try:
+            create_alignments(self.data_directory, self.state.get(),
+                              self.first_observed.get(), Path.cwd())
+        except Exception as e:
+            showerror(title="Error",
+                      message=f"An error occurred:\n{e.args[0]}")
+        showinfo(title="Message", message="Finished writing alignments")
 
 
 if __name__ == "__main__":
