@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import AlignmentError, check_state
+from .common import AlignmentError, DataLoadingError, check_state
 from .load_file import load_file
 
 
@@ -344,4 +344,8 @@ class ExperimentCollection:
         so it may be slow.
         """
         for exp_file in self._filenames:
-            yield Experiment(*load_file(exp_file))
+            try:
+                yield Experiment(*load_file(exp_file))
+            except DataLoadingError as e:
+                warnings.warn(e.args[0])
+                continue
