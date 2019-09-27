@@ -4,7 +4,7 @@ import warnings
 import pandas as pd
 import xlrd
 
-from .common import SLEEP_STATE
+from .common import SLEEP_STATE, DataLoadingError
 
 # TODO Put this in a config file for easier editing by anyone
 # The data recorded at each epoch
@@ -89,7 +89,11 @@ def load_file(path):
         warnings.warn(
             f"Multiple sheets found in {path}! Will only read the first.")
     sheet = book.sheet_by_index(0)
-    validate_sheet(sheet)
+    try:
+        validate_sheet(sheet)
+    except AssertionError as e:
+        raise DataLoadingError(f"Invalid data found in {path}:"
+                               + e.args[0])
     n_epochs = min(sheet.row_len(n) for n in range(sheet.nrows)) - 1
     df = pd.read_excel(book, usecols=range(n_epochs+1), index_col=0)
     # The data is stored the other way around from what Pandas would expect.

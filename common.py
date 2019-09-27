@@ -7,6 +7,10 @@ SLEEP_STATE = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
 
 
 # Errors
+class DataLoadingError(RuntimeError):
+    """An exception to raise when a data file cannot be read."""
+    pass
+
 class SleepStateNotRecognisedError(ValueError):
     """An exception to raise when an unrecognised sleep state is specified."""
     pass
