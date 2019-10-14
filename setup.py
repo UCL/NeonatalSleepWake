@@ -23,5 +23,11 @@ setup(
     install_requires=dependencies_base,
     extras_require={
         "test": dependencies_test
+    },
+    entry_points={
+        "console_scripts": [
+            "write_summaries = write_summaries:main",
+            "write_alignments = write_alignment:main"
+        ]
     }
 )

@@ -95,7 +95,7 @@ def create_alignments(directory, state, first_observed, out_directory):
         output_meta_file.write(meta_text)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -113,3 +113,7 @@ if __name__ == "__main__":
                       args.state,
                       args.first_occurrence,
                       args.out_directory)
+
+
+if __name__ == "__main__":
+    main()
