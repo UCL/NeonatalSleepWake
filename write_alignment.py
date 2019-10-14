@@ -6,6 +6,7 @@ contained in a single directory.
 import argparse
 import datetime
 from pathlib import Path
+import textwrap
 import warnings
 
 from neonatal_sleep.common import SLEEP_STATE, AlignmentError
@@ -82,7 +83,7 @@ def create_alignments(directory, state, first_observed, out_directory):
     This file was generated at {time} on {date}.
     """
     now = datetime.datetime.now()
-    meta_text = meta_template.format(
+    meta_text = textwrap.dedent(meta_template).format(
         results_file=out_data_path.absolute(),
         input_location=Path(directory).absolute(),
         mode="occurrences of" if first_observed else "transitions to",
