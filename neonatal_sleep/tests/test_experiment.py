@@ -6,9 +6,11 @@ import pandas as pd
 import pytest
 import yaml
 
-from ..common import SLEEP_STATE, AlignmentError, SleepStateNotRecognisedError
-from ..experiment import Experiment, ExperimentCollection
-from ..load_file import load_file
+from neonatal_sleep.common import (SLEEP_STATE,
+                                   AlignmentError,
+                                   SleepStateNotRecognisedError)
+from neonatal_sleep.experiment import Experiment, ExperimentCollection
+from neonatal_sleep.load_file import load_file
 
 
 @pytest.fixture(scope="module")

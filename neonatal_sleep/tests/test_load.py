@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 import yaml
 
-from ..common import SLEEP_STATE
-from ..load_file import load_file, FIELDS, METADATA_COLUMNS
+from neonatal_sleep.common import SLEEP_STATE
+from neonatal_sleep.load_file import load_file, FIELDS, METADATA_COLUMNS
 
 
 @pytest.mark.skipif("NEONATAL_TEST_DIR" not in os.environ,

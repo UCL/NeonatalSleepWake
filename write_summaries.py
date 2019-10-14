@@ -6,7 +6,7 @@ Usage: python -m NeonatalSleepWake.write_summaries <path_to_data>
 
 import sys
 
-from .experiment import ExperimentCollection
+from neonatal_sleep.experiment import ExperimentCollection
 
 if __name__ == "__main__":
     collection = ExperimentCollection()
