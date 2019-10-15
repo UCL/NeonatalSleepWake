@@ -26,7 +26,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "write_summaries = neonatal_sleep.utils.write_summaries:main",
+            "write_summaries = neonatal_sleep.utils.write_summaries:entry_point",
             "write_alignments = neonatal_sleep.utils.write_alignment:main"
         ]
     }

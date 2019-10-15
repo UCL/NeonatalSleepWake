@@ -9,11 +9,17 @@ import sys
 from ..experiment import ExperimentCollection
 
 
-def main():
+def main(in_directory):
+    """Write a summary of the files contained in the given directory."""
     collection = ExperimentCollection()
-    collection.add_directory(sys.argv[1])
+    collection.add_directory(in_directory)
     collection.write_summary("summary_all.csv")
 
 
+def entry_point():
+    """Convenience function for calling as a script."""
+    main(sys.argv[1])
+
+
 if __name__ == "__main__":
-    main()
+    entry_point()
