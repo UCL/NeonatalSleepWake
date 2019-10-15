@@ -9,7 +9,7 @@ import sys
 from ..experiment import ExperimentCollection
 
 
-def main(in_directory):
+def create_summary(in_directory):
     """Write a summary of the files contained in the given directory."""
     collection = ExperimentCollection()
     collection.add_directory(in_directory)
@@ -18,7 +18,7 @@ def main(in_directory):
 
 def entry_point():
     """Convenience function for calling as a script."""
-    main(sys.argv[1])
+    create_summary(sys.argv[1])
 
 
 if __name__ == "__main__":

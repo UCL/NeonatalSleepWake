@@ -96,7 +96,7 @@ def create_alignments(directory, state, first_observed, out_directory):
         output_meta_file.write(meta_text)
 
 
-def main():
+def entry_point():
     parser = argparse.ArgumentParser(
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -117,4 +117,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    entry_point()

@@ -10,7 +10,7 @@ function writeSummaries(inputDir)
 %   states in that experiment.
 
 % Assume that the python interpreter has been set correctly
-py.neonatal_sleep.utils.write_summaries.main(inputDir);
+py.neonatal_sleep.utils.write_summaries.create_summary(inputDir);
 fprintf('Summaries written\n');
 end
 
