@@ -9,8 +9,8 @@ from pathlib import Path
 import textwrap
 import warnings
 
-from neonatal_sleep.common import SLEEP_STATE, AlignmentError
-from neonatal_sleep.experiment import ExperimentCollection
+from ..common import SLEEP_STATE, AlignmentError
+from ..experiment import ExperimentCollection
 
 COLUMN_HEADERS = ["Baby_reference",	"Start_time",
                   "Neonatal_unit_yes_no", "High_risk_yes_no",

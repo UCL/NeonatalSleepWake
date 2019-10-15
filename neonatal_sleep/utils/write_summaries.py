@@ -6,7 +6,7 @@ Usage: python write_summaries <path_to_data>
 
 import sys
 
-from neonatal_sleep.experiment import ExperimentCollection
+from ..experiment import ExperimentCollection
 
 
 def main():

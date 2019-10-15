@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 dependencies_base = [
     "numpy",
@@ -14,7 +14,7 @@ dependencies_test = [
 setup(
     name='neonatal_sleep',
     version='0.1',
-    packages=['neonatal_sleep'],
+    packages=find_packages(),
     url='',
     license='',
     author='UCL RSDG',
@@ -26,8 +26,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "write_summaries = write_summaries:main",
-            "write_alignments = write_alignment:main"
+            "write_summaries = neonatal_sleep.utils.write_summaries:main",
+            "write_alignments = neonatal_sleep.utils.write_alignment:main"
         ]
     }
 )
