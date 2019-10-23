@@ -4,7 +4,7 @@
 % effect the next times MATLAB is loaded.
 
 % TODO Check that this is what we have named the environment
-environmentName = 'neonatal';
+environmentName = 'NeonatalSleepWake';
 
 % See what interpreter is currently active
 [version, executable, loaded] = pyversion;
@@ -17,12 +17,12 @@ if ispc  % For Windows
     python = 'pythonw.exe'; %TODO Check if this should be python.exe instead
 else
     homeDir = getenv('HOME');
-    python = 'python';
+    python = fullfile('bin', 'python');
 end
 % Construct the location of the Python executable we want
 % TODO Check if in Windows the exe is under Scripts instead of bin
 targetPython = fullfile(homeDir, 'anaconda3', 'envs', environmentName, ...
-    'bin', python);
+    python);
 fprintf('Will use executable at: %s\n', targetPython);
 
 pyversion(targetPython);
