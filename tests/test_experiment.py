@@ -259,3 +259,65 @@ def test_get_alignment_time(sample_experiment, sample_data, sample_alignments):
             sample_experiment.get_alignment_start_time(index).strftime("%H:%M")
             == expected_times[index]
         )
+
+
+def test_check_alignment_exists_no_alignment(sample_experiment):
+    """Check for an error when checking alignment indices before aligning."""
+    # The sample experiment is not aligned to begin with.
+    with pytest.raises(AlignmentError):
+        sample_experiment._check_alignment_exists(0)
+
+
+def test_check_alignment_exists_invalid_alignment(sample_experiment):
+    """Check that invalid alignment indices give an error when checked."""
+    sample_experiment.start_at_state("REM")  # creates 2 alignments
+    with pytest.raises(IndexError):
+        sample_experiment._check_alignment_exists(2)
+
+
+def test_check_alignment_exists_valid_alignment(sample_experiment):
+    """Check that valid alignment indices don't give an error."""
+    sample_experiment.start_at_state("REM")  # creates 2 alignments
+    sample_experiment._check_alignment_exists(0)
+    sample_experiment._check_alignment_exists(1)
+
+
+def test_epochs_since_stimulation_invalid_type(sample_experiment):
+    """Check for an error when specifying an invalid stimulation type."""
+    with pytest.raises(AssertionError):
+        sample_experiment.get_epochs_since_stimulation("Wrong_type", 0)
+
+
+def test_epochs_since_stimulation_none_found(sample_experiment):
+    """Check behaviour when there are no stimulations prior to alignment."""
+    sample_experiment.start_at_state("REM")
+    assert sample_experiment.get_epochs_since_stimulation(
+        "Painful_stimulation", 0) is None
+
+
+def test_epochs_since_stimulation_found(sample_experiment):
+    """Check the number of epochs since stimulation for some simple cases."""
+    sample_experiment.start_at_state("REM")
+    assert sample_experiment.get_epochs_since_stimulation(
+        "Painful_stimulation", 1) == 3
+    assert sample_experiment.get_epochs_since_stimulation(
+        "Somatosensory_stimulation", 1) == 1
+    assert sample_experiment.get_epochs_since_stimulation(
+        "Held", 1) == 1
+
+
+@pytest.mark.parametrize("stimulus", ["Painful_stimulation",
+                                      "Somatosensory_stimulation",
+                                      "Held"])
+def test_epochs_since_stimulation_none_at_start(sample_experiment, stimulus):
+    """Check that we never see prior stimulation if starting at first epoch."""
+    # Align to the very first epoch
+    sample_experiment.start_at_state("Awake", observed_start=False)
+    assert sample_experiment.get_epochs_since_stimulation(stimulus, 0) is None
+
+
+def test_epochs_since_stimulation_exclude_simultaneous(awake_nrem_experiment):
+    """Check that we exclude stimulations that overlap with the alignment."""
+    awake_nrem_experiment.start_at_state("nREM")
+    assert awake_nrem_experiment.get_epochs_since_stimulation(
+        "Painful_stimulation", 0) is None

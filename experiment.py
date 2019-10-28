@@ -218,10 +218,7 @@ class Experiment:
         """
         if alignment is None:
             return slice(self._runs_start, None)
-        if not self._breakpoints:
-            raise AlignmentError("No alignments found.")
-        if alignment >= len(self._breakpoints):
-            raise IndexError(f"Invalid alignment index: {alignment}")
+        self._check_alignment_exists(alignment)
         start, stop = self._breakpoints[alignment]
         runs_start = self._runs[self._runs.Start == start].index[0]
         runs_stop = self._runs[self._runs.Stop == stop].index[0]
@@ -277,10 +274,7 @@ class Experiment:
     def get_alignment_start_time(self, alignment_index):
         """Get the time that the specified alignment started."""
         # Check that the requested alignment exists
-        if not self._breakpoints:
-            raise AlignmentError("No alignments found.")
-        if alignment_index >= len(self._breakpoints):
-            raise IndexError(f"Invalid alignment index: {alignment_index}")
+        self._check_alignment_exists(alignment_index)
         # Calculate how many seconds have passed since the experiment started
         starting_run = self._get_slice_for_alignment(alignment_index).start
         epochs_before_alignment = int(self._runs.Duration[:starting_run].sum())
@@ -291,6 +285,43 @@ class Experiment:
         base_datetime = datetime.datetime.combine(datetime.datetime.today(),
                                                   self.Start_time)
         return (base_datetime + offset).time()
+
+    def get_epochs_since_stimulation(self, stimulus_type, alignment_index):
+        """Return the time since the last stimulation before an alignment.
+
+        This will search for the latest instance of stimulation of the given
+        kind prior to a particular alignment starting. Any stimulation at the
+        same time as the start of the alignment is disregarded. If no instances
+        are found, then None is returned.
+
+        :param stimulus_type: the kind of stimulation e.g. Painful_stimulation
+        :param alignment_index: 0-based index of the alignment in question
+        :returns: the number of epochs since stimulation, or None if none found
+        """
+        # Check that the arguments are meaningful...
+        assert stimulus_type in ["Painful_stimulation",
+                                 "Somatosensory_stimulation",
+                                 "Held"], f"Invalid stimulus: {stimulus_type}"
+        self._check_alignment_exists(alignment_index)
+        # Find the last instance of stimulation before the alignment started
+        col_name = f"{stimulus_type}_yes_no"
+        start = self._breakpoints[alignment_index][0]
+        indices = np.flatnonzero(self._data.iloc[:start][col_name])
+        if indices.size == 0:
+            return None
+        else:  # number of epochs between last stimulus and start of alignment
+            return start - indices[-1]
+
+    def _check_alignment_exists(self, alignment_index):
+        """Throw an error if the given index does not match a valid alignment.
+
+        :raises AlignmentError: if alignment has not been performed
+        :raises IndexError: if the index surpasses the number of alignments
+        """
+        if not self._breakpoints:
+            raise AlignmentError("No alignments found.")
+        if alignment_index >= len(self._breakpoints):
+            raise IndexError(f"Invalid alignment index: {alignment_index}")
 
 
 class ExperimentCollection:
