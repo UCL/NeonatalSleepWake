@@ -5,6 +5,8 @@ contained in a single directory.
 
 import argparse
 import datetime
+from functools import reduce
+from operator import concat
 from pathlib import Path
 import warnings
 
@@ -15,7 +17,28 @@ COLUMN_HEADERS = ["Baby_reference",	"Start_time",
                   "Neonatal_unit_yes_no", "High_risk_yes_no",
                   "Postnatal_age_days", "Corrected_gestational_age_weeks",
                   "No.epochs_this_alignment", "No.epochs_Awake",
-                  "No.epochs_REM", "No.epochs_Trans", "No.epochs_nREM"]
+                  "No.epochs_REM", "No.epochs_Trans", "No.epochs_nREM",
+                  "Painful_stimulation_any_preceding_yes_no",
+                  "Painful_stimulation_epochs_prior",
+                  "Somatosensory_stimulation_any_preceding_yes_no",
+                  "Somatosensory_stimulation_epochs_prior",
+                  "Held_any_preceding_yes_no",
+                  "Held_epochs_prior"]
+
+
+def _last_stimulus_information(stimulus, experiment, alignment_index):
+    """Report when a stimulus was last seen before an alignment.
+
+    Returns a list [found, epochs], where found is True iff the stimulus has
+    been encountered before the specified alignment started, and epochs is
+    the number of epochs between the last occurrence of the stimulus and the
+    start of the alignment (or 0 if found is False i.e. the stimulus has not
+    been encountered).
+    """
+    epochs_since_stimulation = experiment.get_epochs_since_stimulation(
+        stimulus, alignment_index)
+    stimulus_found = epochs_since_stimulation is not None
+    return [stimulus_found, epochs_since_stimulation if stimulus_found else 0]
 
 
 def write_aligned_experiment(experiment, state, observed_start, output_file):
@@ -26,6 +49,15 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
         reference = f"{experiment.Baby_reference}_alignment_{alignment_index+1}"
         n_epochs, n_columns = alignment_data.shape
         start_time = experiment.get_alignment_start_time(alignment_index)
+        # Get the information about the last occurrence of each stimulus
+        last_stimulation_info = [
+            _last_stimulus_information(stimulus, experiment, alignment_index)
+            for stimulus
+            in ("Painful_stimulation", "Somatosensory_stimulation", "Held")
+        ]
+        # Flatten the list to more easily combine it with the other columns
+        last_stimulation_info_all = reduce(concat, last_stimulation_info)
+
         # The row to repeat for every aspect of this alignment
         meta_row = ",".join(map(str,
                                 [reference, start_time,
@@ -37,7 +69,8 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
                                  experiment.count("Awake", alignment_index),
                                  experiment.count("REM", alignment_index),
                                  experiment.count("Trans", alignment_index),
-                                 experiment.count("nREM", alignment_index)],
+                                 experiment.count("nREM", alignment_index)]
+                                + last_stimulation_info_all
                                 ))
         for col in range(n_columns):
             # write metadata
