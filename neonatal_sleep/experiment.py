@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import AlignmentError, check_state
+from .common import AlignmentError, check_state, check_can_align_to
 from .load_file import load_file
 
 
@@ -198,6 +198,15 @@ class Experiment:
             # it later?
             start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
             self._start_at_epoch(start_row)
+
+    def start_at_stimulus(self, stimulus):
+        """Shift the data so that it starts at the specified stimulus."""
+        check_can_align_to(stimulus)
+        # Look into the data to find all initial occurrences of the stimulus
+        occurrences = self._data[stimulus]
+        continued_occurrences = self._data[stimulus].shift(-1)
+        starting_points = self._data[stimulus][occurrences & ~continued_occurrences]
+        # TODO Finish!
 
     def _start_at_epoch(self, epoch_number):
         """Specify which epoch we should consider at the first.

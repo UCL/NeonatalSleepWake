@@ -6,12 +6,13 @@ contained in a single directory.
 import argparse
 import datetime
 from functools import reduce
+from itertools import chain
 from operator import concat
 from pathlib import Path
 import textwrap
 import warnings
 
-from ..common import SLEEP_STATE, AlignmentError
+from ..common import SLEEP_STATE, STIMULI, AlignmentError
 from ..experiment import ExperimentCollection
 
 COLUMN_HEADERS = ["Baby_reference",	"Start_time",
@@ -50,7 +51,16 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
     :param observed_start: if True, discard epochs until we see a transition to state
     :param output_file: file handle to write alignments in
     """
-    experiment.start_at_state(state, observed_start)
+    # TODO Update docstring to also mention stimuli options
+    if state in SLEEP_STATE.categories:
+        experiment.start_at_state(state, observed_start)
+    else:
+        experiment.start_at_stimulus(state)
+        # When aligning to a stimulus, we only care about the first occurrence,
+        # not about capturing its onset, despite what the user has specified.
+        if observed_start:
+            # TODO This should only be printed once, not once per file
+            warnings.warn("Will align to first occurrence of stimulus.")
     all_alignments = experiment.get_alignment_data()
     for (alignment_index, alignment_data) in enumerate(all_alignments):
         # Start counting alignments from 1 rather than 0, for clarity
@@ -149,8 +159,9 @@ def entry_point():
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('directory', help='the path to the data files')
-    parser.add_argument('state', choices=SLEEP_STATE.categories,
-                        help='the first state to align to')
+    parser.add_argument('state',
+                        choices=chain(SLEEP_STATE.categories, STIMULI),
+                        help='the first state or stimulus to align to')
     parser.add_argument('--first-occurrence', action='store_true',
                         help='use the first occurrence of the state, '
                              'rather than the first transition to it')

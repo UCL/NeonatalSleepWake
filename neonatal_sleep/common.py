@@ -6,6 +6,10 @@ import pandas as pd
 SLEEP_STATE = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
 
 
+# The different environmental stimuli
+STIMULI = ["Painful_stimulation", "Somatosensory_stimulation", "Held"]
+
+
 # Errors
 class SleepStateNotRecognisedError(ValueError):
     """An exception to raise when an unrecognised sleep state is specified."""
@@ -26,3 +30,9 @@ def check_state(state):
     if state not in SLEEP_STATE.categories:
         raise SleepStateNotRecognisedError(
             f"Unrecognised sleep state: {state}")
+
+
+def check_can_align_to(option):
+    """Check that the given option is a sleep state or a stimulus type."""
+    if option not in SLEEP_STATE.categories and option not in STIMULI:
+        raise AlignmentError(f"Cannot align to {option}")
