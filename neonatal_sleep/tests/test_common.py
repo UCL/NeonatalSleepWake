@@ -1,6 +1,8 @@
 import pytest
 
-from ..common import check_state, SLEEP_STATE, SleepStateNotRecognisedError
+from neonatal_sleep.common import (check_state,
+                                   SLEEP_STATE,
+                                   SleepStateNotRecognisedError)
 
 
 def test_check_state_invalid_state():
