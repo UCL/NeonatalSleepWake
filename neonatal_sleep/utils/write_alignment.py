@@ -43,6 +43,13 @@ def _last_stimulus_information(stimulus, experiment, alignment_index):
 
 
 def write_aligned_experiment(experiment, state, observed_start, output_file):
+    """Write all alignments from a single experiment.
+
+    :param experiment: the Experiment to be processed
+    :param state: the state to align to ("REM", "nREM", "Awake" or "Trans")
+    :param observed_start: if True, discard epochs until we see a transition to state
+    :param output_file: file handle to write alignments in
+    """
     experiment.start_at_state(state, observed_start)
     all_alignments = experiment.get_alignment_data()
     for (alignment_index, alignment_data) in enumerate(all_alignments):
@@ -83,6 +90,13 @@ def write_aligned_experiment(experiment, state, observed_start, output_file):
 
 
 def create_alignments(directory, state, first_observed, out_directory):
+    """Write alignments for all files in a directory, along with metadata.
+
+    :param directory: where to search for experiment files
+    :param state: the state to align to ("REM", "nREM", "Awake" or "Trans")
+    :param first_observed: if False, discard epochs until we see a transition to state
+    :param out_directory: path for storing the output files
+    """
     collection = ExperimentCollection()
     collection.add_directory(directory)
 
@@ -130,6 +144,7 @@ def create_alignments(directory, state, first_observed, out_directory):
 
 
 def entry_point():
+    """A convenience function to write alignments from the command line."""
     parser = argparse.ArgumentParser(
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
