@@ -11,11 +11,11 @@ from ..load_file import load_file
 from ..experiment import Experiment
 
 
+# Assign lower numbers to "deeper" sleep states so they show up lower in plot
 states_to_num = {
-    "Awake": 0,
-    "Trans": 1,
-    "nREM": 2,
-    "REM": 3
+    state: depth
+    for (depth, state)
+    in enumerate(["nREM", "Trans", "REM", "Awake"])
 }
 
 
@@ -35,6 +35,7 @@ def plot_hypnogram(exp):
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
     plt.yticks(ticks=ticks, labels=labels)
+    plt.xlabel('Time (epochs)')
     plt.show()
 
 
