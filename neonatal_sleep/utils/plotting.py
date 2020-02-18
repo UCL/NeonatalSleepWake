@@ -2,7 +2,9 @@
 Utilities for creating plots from experimental data.
 """
 import sys
+from argparse import ArgumentParser
 from operator import itemgetter
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +24,7 @@ colours = ["red", "blue", "green", "yellow"]
 patterns = ['/', '+', 'x', '.']
 
 
-def plot_hypnogram(exp):
+def plot_hypnogram(exp, output_file=None):
     """Plot a hypnogram corresponding to the given experiment."""
     # FIXME Retrieve this in a better way, taking alignment into account
     data = exp._data
@@ -45,13 +47,25 @@ def plot_hypnogram(exp):
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
     plt.yticks(ticks=ticks, labels=labels)
     plt.xlabel('Time (epochs)')
-    plt.show()
+    if output_file:
+        print(f"Saving hypnogram at {output_file}.")
+        plt.savefig(output_file)
+    else:
+        plt.show()
 
 
 def entry_point():
-    # FIXME Make this less rough...
-    exp = Experiment(*load_file(sys.argv[1]))
-    plot_hypnogram(exp)
+    parser = ArgumentParser(
+        description="Create a hypnogram from a patient's sleep data")
+    parser.add_argument("input", help="The data file (.xlsx) to plot")
+    args = parser.parse_args()
+    input_path = Path(args.input)
+    if input_path.suffix != '.xlsx':
+        raise ValueError(f"{input_path.name}: The input file should be "
+                          "an .xlsx file")
+    exp = Experiment(*load_file(args.input))
+    output_file = f"hypnogram_{input_path.stem}.png"
+    plot_hypnogram(exp, output_file)
 
 
 if __name__ == "__main__":
