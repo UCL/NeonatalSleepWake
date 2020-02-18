@@ -25,21 +25,19 @@ patterns = ['/', '+', 'x', '.']
 def plot_hypnogram(exp):
     """Plot a hypnogram corresponding to the given experiment."""
     # FIXME Retrieve this in a better way, taking alignment into account
-    runs = exp._runs
-    times = list(runs.Start) + [runs.Stop.iloc[-1]]
+    data = exp._data
+    times = list(data.index - 1)
     # Convert each state to a number for plotting, according to mapping above
-    states = [states_to_num[s] for s in runs.From]
-    # Duplicate last state for better plotting and use NumPy for convenience
-    num_states = np.array(states + [states[-1]])
+    states = np.array([states_to_num[s] for s in data.Sleep_wake])
     # Plot the timeseries, topped by a box of different colour for each state
-    plt.step(times, num_states, where="post")
+    plt.step(times, states, where="post")
     for i in states_to_num.values():
         # Select the points at which we want to plot the box for this state.
         # For a box to be plotted, both its endpoints need to be selected,
         # so we use the condition "the state is i OR the previous state was i".
-        span = np.logical_or(num_states == i,
-                             np.hstack(([False], num_states[:-1] == i)))
-        plt.fill_between(times, num_states, top_level,
+        span = np.logical_or(states == i,
+                             np.hstack(([False], states[:-1] == i)))
+        plt.fill_between(times, states, top_level,
                          where=span, step="post",
                          color=colours[i], alpha=0.4, hatch=patterns[i])
     # Set the location and label of the y-axis ticks based on the same mapping
