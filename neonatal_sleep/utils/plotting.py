@@ -17,6 +17,8 @@ states_to_num = {
     for (depth, state)
     in enumerate(["nREM", "Trans", "REM", "Awake"])
 }
+top_level = max(states_to_num.values()) + 1
+colours = ["red", "blue", "green", "yellow"]
 
 
 def plot_hypnogram(exp):
@@ -28,9 +30,17 @@ def plot_hypnogram(exp):
     states = [states_to_num[s] for s in runs.From]
     # Duplicate last state for better plotting and use NumPy for convenience
     num_states = np.array(states + [states[-1]])
-    # Plot the timeseries and fill in boxes where state is "at least" sleeping
+    # Plot the timeseries, topped by a box of different colour for each state
     plt.step(times, num_states, where="post")
-    plt.fill_between(times, num_states, 1, where=num_states > 1, step="post")
+    for i in states_to_num.values():
+        # Select the points at which we want to plot the box for this state.
+        # For a box to be plotted, both its endpoints need to be selected,
+        # so we use the condition "the state is i OR the previous state was i".
+        span = np.logical_or(num_states == i,
+                             np.hstack(([False], num_states[:-1] == i)))
+        plt.fill_between(times, num_states, top_level,
+                         where=span, step="post",
+                         color=colours[i], alpha=0.4)
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
