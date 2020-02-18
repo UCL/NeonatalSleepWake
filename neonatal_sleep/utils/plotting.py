@@ -19,6 +19,7 @@ states_to_num = {
 }
 top_level = max(states_to_num.values()) + 1
 colours = ["red", "blue", "green", "yellow"]
+patterns = ['/', '+', 'x', '.']
 
 
 def plot_hypnogram(exp):
@@ -40,7 +41,7 @@ def plot_hypnogram(exp):
                              np.hstack(([False], num_states[:-1] == i)))
         plt.fill_between(times, num_states, top_level,
                          where=span, step="post",
-                         color=colours[i], alpha=0.4)
+                         color=colours[i], alpha=0.4, hatch=patterns[i])
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
