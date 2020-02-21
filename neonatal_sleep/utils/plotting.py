@@ -15,11 +15,10 @@ from ..experiment import Experiment
 
 # Assign lower numbers to "deeper" sleep states so they show up lower in plot
 states_to_num = {
-    state: depth
+    state: depth + 1
     for (depth, state)
     in enumerate(["nREM", "Trans", "REM", "Awake"])
 }
-top_level = max(states_to_num.values()) + 1
 colours = ["red", "blue", "green", "yellow"]
 patterns = ['/', '+', 'x', '.']
 
@@ -39,9 +38,9 @@ def plot_hypnogram(exp, output_file=None):
         # so we use the condition "the state is i OR the previous state was i".
         span = np.logical_or(states == i,
                              np.hstack(([False], states[:-1] == i)))
-        plt.fill_between(times, states, top_level,
+        plt.fill_between(times, states, 0,
                          where=span, step="post",
-                         color=colours[i], alpha=0.4, hatch=patterns[i])
+                         color=colours[i-1], alpha=0.4, hatch=patterns[i-1])
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
