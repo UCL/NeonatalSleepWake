@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import AutoMinorLocator
 
-from ..load_file import load_file
+from ..common import SLEEP_STATE
 from ..experiment import Experiment
+from ..load_file import load_file
 
 
 # Assign lower numbers to "deeper" sleep states so they show up lower in plot
@@ -26,11 +27,17 @@ colours = ["#4574c7", "#ec7d27", "#a5a5a5", "#febf00"]
 patterns = ['/', '+', 'x', '.']
 
 
-def plot_hypnogram(exp, output_file=None):
-    """Plot a hypnogram corresponding to the given experiment."""
-    # FIXME Retrieve this in a better way, taking alignment into account
-    data = exp._data
-    times = list(data.index - 1)
+def plot_hypnogram(exp, initial_state, output_file=None):
+    """Plot a hypnogram corresponding to the given experiment.
+
+    First shifts the data so that the first state to be plotted is the given
+    initial_state. Any data before that state is first encountered will be
+    ignored.
+    """
+    exp.start_at_state(initial_state, observed_start=False)
+    data = exp.get_full_data_since_onset()
+    # Consider the first epoch of the alignment as time 0
+    times = data.index - data.index[0]
     # Convert each state to a number for plotting, according to mapping above
     states = np.array([states_to_num[s] for s in data.Sleep_wake])
     # Plot the timeseries, topped by a box of different colour for each state
@@ -69,14 +76,21 @@ def entry_point():
     parser = ArgumentParser(
         description="Create a hypnogram from a patient's sleep data")
     parser.add_argument("input", help="The data file (.xlsx) to plot")
+    parser.add_argument("state",
+                        choices=SLEEP_STATE.categories,
+                        default="Awake",
+                        nargs='?',
+                        help="The initial sleep state to align to "
+                             "(default: Awake)")
     args = parser.parse_args()
     input_path = Path(args.input)
     if input_path.suffix != '.xlsx':
         raise ValueError(f"{input_path.name}: The input file should be "
                           "an .xlsx file")
     exp = Experiment(*load_file(args.input))
-    output_file = f"hypnogram_{input_path.stem}.pdf"
-    plot_hypnogram(exp, output_file)
+    initial_state = args.state
+    output_file = f"hypnogram_{input_path.stem}_{initial_state}.pdf"
+    plot_hypnogram(exp, initial_state, output_file)
 
 
 if __name__ == "__main__":

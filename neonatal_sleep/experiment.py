@@ -229,6 +229,17 @@ class Experiment:
         self._start = self._runs_start = 0
         self._breakpoints.clear()
 
+    def get_full_data_since_onset(self):
+        """Get the data from the first epoch onwards, after alignment.
+
+        This will leave out any data before the specified onset,
+        but will include the data from all sub-series from then onwards.
+
+        If no alignment has been performed, this will returned all data.
+        """
+        return self._data.iloc[self._start:]
+
+
     def get_alignment_data(self):
         """Return a list containing the information to write out alignments.
 
