@@ -46,11 +46,18 @@ def plot_hypnogram(exp, output_file=None):
                          color=colours[i-1], hatch=patterns[i-1])
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
-    labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
-    plt.yticks(ticks=ticks, labels=labels)
+    state_labels = {
+        "nREM": "active sleep",
+        "Trans": "transitional sleep",
+        "REM": "quiet sleep",
+        "Awake": "awake"
+    }
+    state_codes, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
+    plt.yticks(ticks=ticks, labels=map(state_labels.get, state_codes))
     plt.gca().xaxis.set_minor_locator(AutoMinorLocator())
     plt.xlim(left=0)
     plt.xlabel('Time (epochs)')
+    plt.tight_layout()
     if output_file:
         print(f"Saving hypnogram at {output_file}.")
         plt.savefig(output_file)
@@ -68,7 +75,7 @@ def entry_point():
         raise ValueError(f"{input_path.name}: The input file should be "
                           "an .xlsx file")
     exp = Experiment(*load_file(args.input))
-    output_file = f"hypnogram_{input_path.stem}.png"
+    output_file = f"hypnogram_{input_path.stem}.pdf"
     plot_hypnogram(exp, output_file)
 
 
