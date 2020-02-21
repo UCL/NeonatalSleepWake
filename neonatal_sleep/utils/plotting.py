@@ -19,7 +19,9 @@ states_to_num = {
     for (depth, state)
     in enumerate(["nREM", "Trans", "REM", "Awake"])
 }
-colours = ["red", "blue", "green", "yellow"]
+# Approximate matplotlib colours:
+# ["royalblue", "darkorange", "darkgrey", "gold"]
+colours = ["#4574c7", "#ec7d27", "#a5a5a5", "#febf00"]
 patterns = ['/', '+', 'x', '.']
 
 
@@ -40,7 +42,7 @@ def plot_hypnogram(exp, output_file=None):
                              np.hstack(([False], states[:-1] == i)))
         plt.fill_between(times, states, 0,
                          where=span, step="post",
-                         color=colours[i-1], alpha=0.4, hatch=patterns[i-1])
+                         color=colours[i-1], hatch=patterns[i-1])
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
