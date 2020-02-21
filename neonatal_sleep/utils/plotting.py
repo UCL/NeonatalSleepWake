@@ -89,7 +89,7 @@ def entry_point():
                           "an .xlsx file")
     exp = Experiment(*load_file(args.input))
     initial_state = args.state
-    output_file = f"hypnogram_{input_path.stem}_{initial_state}.pdf"
+    output_file = f"hypnogram_{input_path.stem}_{initial_state}.eps"
     plot_hypnogram(exp, initial_state, output_file)
 
 
