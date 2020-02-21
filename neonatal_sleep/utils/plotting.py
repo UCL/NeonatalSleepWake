@@ -8,6 +8,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import AutoMinorLocator
 
 from ..load_file import load_file
 from ..experiment import Experiment
@@ -33,7 +34,7 @@ def plot_hypnogram(exp, output_file=None):
     # Convert each state to a number for plotting, according to mapping above
     states = np.array([states_to_num[s] for s in data.Sleep_wake])
     # Plot the timeseries, topped by a box of different colour for each state
-    plt.step(times, states, where="post")
+    plt.step(times, states, where="post", color="black")
     for i in states_to_num.values():
         # Select the points at which we want to plot the box for this state.
         # For a box to be plotted, both its endpoints need to be selected,
@@ -47,6 +48,8 @@ def plot_hypnogram(exp, output_file=None):
     # (the sorting is probably not needed)
     labels, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
     plt.yticks(ticks=ticks, labels=labels)
+    plt.gca().xaxis.set_minor_locator(AutoMinorLocator())
+    plt.xlim(left=0)
     plt.xlabel('Time (epochs)')
     if output_file:
         print(f"Saving hypnogram at {output_file}.")
