@@ -54,9 +54,9 @@ def plot_hypnogram(exp, initial_state, output_file=None):
     # Set the location and label of the y-axis ticks based on the same mapping
     # (the sorting is probably not needed)
     state_labels = {
-        "nREM": "active sleep",
+        "nREM": "quiet sleep",
         "Trans": "transitional sleep",
-        "REM": "quiet sleep",
+        "REM": "active sleep",
         "Awake": "awake"
     }
     state_codes, ticks = zip(*sorted(states_to_num.items(), key=itemgetter(1)))
