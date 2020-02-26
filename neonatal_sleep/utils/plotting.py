@@ -27,14 +27,19 @@ colours = ["#4574c7", "#ec7d27", "#a5a5a5", "#febf00"]
 patterns = ['/', '+', 'x', '.']
 
 
-def plot_hypnogram(exp, initial_state, output_file=None):
+def plot_hypnogram(exp, initial_state, find_jump, output_file=None):
     """Plot a hypnogram corresponding to the given experiment.
 
     First shifts the data so that the first state to be plotted is the given
     initial_state. Any data before that state is first encountered will be
     ignored.
+
+    If find_jump is True, this function will also ignore any data until a
+    transition to the named state is encountered. Otherwise, it will use the
+    first occurrence of that state, even if it is the very first state in the
+    series.
     """
-    exp.start_at_state(initial_state, observed_start=False)
+    exp.start_at_state(initial_state, observed_start=find_jump)
     data = exp.get_full_data_since_onset()
     # Consider the first epoch of the alignment as time 0
     times = data.index - data.index[0]
@@ -82,6 +87,9 @@ def entry_point():
                         nargs='?',
                         help="The initial sleep state to align to "
                              "(default: Awake)")
+    parser.add_argument('--first-occurrence', action='store_true',
+                        help='use the first occurrence of the state, '
+                             'rather than the first transition to it')
     args = parser.parse_args()
     input_path = Path(args.input)
     if input_path.suffix != '.xlsx':
@@ -89,8 +97,10 @@ def entry_point():
                           "an .xlsx file")
     exp = Experiment(*load_file(args.input))
     initial_state = args.state
-    output_file = f"hypnogram_{input_path.stem}_{initial_state}.eps"
-    plot_hypnogram(exp, initial_state, output_file)
+    find_jump = not args.first_occurrence
+    output_file = "hypnogram_{}_{}_{}.eps".format(
+        input_path.stem, initial_state, 'jump' if find_jump else 'first')
+    plot_hypnogram(exp, initial_state, find_jump, output_file)
 
 
 if __name__ == "__main__":
