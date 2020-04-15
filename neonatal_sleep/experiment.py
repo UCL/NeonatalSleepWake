@@ -43,7 +43,7 @@ class Experiment:
         # Assume epochs last for 30 seconds
         self.epoch_duration_seconds = 30
         # Precompute some statistics
-        self._runs = self._compute_sojourns()
+        self._runs = self._compute_sojourns(0, len(self._data))
         # Assume we want to use all the data
         self._start = 0  # which data row to start reading from
         self._runs_start = 0  # which run to start reading from
@@ -120,20 +120,20 @@ class Experiment:
         ])
         return summary
 
-    def _compute_sojourns(self):
+    def _compute_sojourns(self, first_row, last_row):
         """Record how long we spend at each state and where we transition to.
 
         For an interval of interest, group together runs of the same sleep
         state, and record how long each of these last. Also record the state to
         which we jump, and the first and last epoch of each run.
 
-        Currently acts on the whole length of the data.
-
+        :first_row: the starting epoch of the interval to consider (zero-based)
+        :last_row: the last epoch to consider (zero-based, inclusive)
         :return: a DataFrame containing aggregations of sleep states.
         """
         # Find the duration of all consecutive sequences in the dataframe
         # then store them as tuples of (state, duration) in a new series
-        data = self._data.copy()
+        data = self._data[first_row:(last_row + 1)].copy()
         data["subgroups"] = (data.Sleep_wake != data.Sleep_wake.shift(1)).cumsum()
         runs = data.groupby("subgroups", as_index=False).apply(
             lambda x: (x.iloc[0, 0], len(x)))
