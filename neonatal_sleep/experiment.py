@@ -43,7 +43,7 @@ class Experiment:
         # Assume epochs last for 30 seconds
         self.epoch_duration_seconds = 30
         # Precompute some statistics
-        self._compute_sojourns()
+        self._runs = self._compute_sojourns()
         # Assume we want to use all the data
         self._start = 0  # which data row to start reading from
         self._runs_start = 0  # which run to start reading from
@@ -121,7 +121,16 @@ class Experiment:
         return summary
 
     def _compute_sojourns(self):
-        """Record how long we spend at each state and where we transition to."""
+        """Record how long we spend at each state and where we transition to.
+
+        For an interval of interest, group together runs of the same sleep
+        state, and record how long each of these last. Also record the state to
+        which we jump, and the first and last epoch of each run.
+
+        Currently acts on the whole length of the data.
+
+        :return: a DataFrame containing aggregations of sleep states.
+        """
         # Find the duration of all consecutive sequences in the dataframe
         # then store them as tuples of (state, duration) in a new series
         data = self._data.copy()
@@ -144,7 +153,7 @@ class Experiment:
         # Each run lasts from Start until Stop, inclusive.
         runs["Start"] = jump_times.shift(1, fill_value=0)
         runs["Stop"] = jump_times - 1
-        self._runs = runs
+        return runs
 
     def start_at_state(self, state, observed_start=True):
         """Shift the data so that it starts at the specified state.
