@@ -48,6 +48,7 @@ class Experiment:
         self._start = 0  # which data row to start reading from
         self._runs_start = 0  # which run to start reading from
         self._breakpoints = []  # where to break different alignments
+        self._alignment_runs = []  # the runs for each alignment
 
     def number_epochs(self, alignment=None):
         """Return how many epochs are contained in this experiment.
@@ -59,13 +60,12 @@ class Experiment:
         :param alignment: the index of a subseries to consider, as a zero-base
         integer, or None to consider the whole data.
         """
-        limits = self._get_slice_for_alignment(alignment)
-        return self._runs[limits].Duration.sum()
+        return self._get_run_for_alignment(alignment).Duration.sum()
 
     def count(self, state, alignment=None):
         """Return how many times a sleep state occurs in this experiment."""
         check_state(state)
-        considered_runs = self._runs[self._get_slice_for_alignment(alignment)]
+        considered_runs = self._get_run_for_alignment(alignment)
         return considered_runs[considered_runs.From == state].Duration.sum()
 
     def durations(self, state):
@@ -151,8 +151,10 @@ class Experiment:
         runs["To"] = data.iloc[to_indices, 0].reset_index(drop=True)
         # Also record the start and stop time of each run, for convenience
         # Each run lasts from Start until Stop, inclusive.
-        runs["Start"] = jump_times.shift(1, fill_value=0)
-        runs["Stop"] = jump_times - 1
+        # The jump_times are relative to the start of the interval, so we
+        # need to add the first epoch to get absolute "times" (epoch numbers).
+        runs["Start"] = first_row + jump_times.shift(1, fill_value=0)
+        runs["Stop"] = first_row + jump_times - 1
         return runs
 
     def start_at_state(self, state, observed_start=True):
@@ -208,6 +210,9 @@ class Experiment:
             # TODO Also store the first and last run here, to avoid recomputing
             # it later?
             start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
+            # Create a compact representation for each sub-series
+            for (start, end) in self._breakpoints:
+                self._alignment_runs.append(self._compute_sojourns(start, end))
             self._start_at_epoch(start_row)
 
     def _start_at_epoch(self, epoch_number):
@@ -219,6 +224,13 @@ class Experiment:
         self._start = epoch_number
         self._runs_start = self._runs[
             self._runs.Duration.cumsum() > epoch_number].index[0]
+
+    def _get_run_for_alignment(self, alignment):
+        """Retrieve the runs that a given alignment encompasses."""
+        if alignment is None:
+            return self._runs
+        self._check_alignment_exists(alignment)
+        return self._alignment_runs[alignment]
 
     def _get_slice_for_alignment(self, alignment):
         """Compute the span of runs that a given alignment encompasses.
@@ -239,6 +251,7 @@ class Experiment:
         """Set the starting epoch to the first one."""
         self._start = self._runs_start = 0
         self._breakpoints.clear()
+        self._alignment_runs.clear()
 
     def get_full_data_since_onset(self):
         """Get the data from the first epoch onwards, after alignment.
@@ -249,7 +262,6 @@ class Experiment:
         If no alignment has been performed, this will returned all data.
         """
         return self._data.iloc[self._start:]
-
 
     def get_alignment_data(self):
         """Return a list containing the information to write out alignments.
@@ -298,8 +310,8 @@ class Experiment:
         # Check that the requested alignment exists
         self._check_alignment_exists(alignment_index)
         # Calculate how many seconds have passed since the experiment started
-        starting_run = self._get_slice_for_alignment(alignment_index).start
-        epochs_before_alignment = int(self._runs.Duration[:starting_run].sum())
+        epochs_before_alignment = int(self._get_run_for_alignment(alignment_index)
+                                   .iloc[0].Start)
         offset = datetime.timedelta(
             seconds=epochs_before_alignment*self.epoch_duration_seconds)
         # We can only add time differences to full datetime objects,
