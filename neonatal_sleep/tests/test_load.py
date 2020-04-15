@@ -21,7 +21,7 @@ def test_all_load_ok():
     $NEONATAL_TEST_DIR. Very basic check, but useful at an early stage.
     """
     dir_path = os.environ["NEONATAL_TEST_DIR"]
-    real_files = glob.glob(dir_path + "*.xlsx")
+    real_files = glob.glob(os.path.join(dir_path, "*.xlsx"))
     assert real_files, f"No data files found at {dir_path}!"
     for filename in real_files:
         data, metadata = load_file(filename)
