@@ -219,28 +219,28 @@ def test_alignment_first_not_recorded(sample_experiment):
     assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"
 
 
-def test_get_slice_error_no_alignment(sample_experiment):
+def test_get_run_error_no_alignment(sample_experiment):
     """Check for an error when no alignments have been created."""
     with pytest.raises(AlignmentError):
-        sample_experiment._get_slice_for_alignment(0)
+        sample_experiment._get_run_for_alignment(0)
 
 
-def test_get_slice_error_not_enough_alignments(awake_nrem_experiment):
+def test_get_run_error_not_enough_alignments(awake_nrem_experiment):
     """Check for an error when using an invalid alignment index."""
     awake_nrem_experiment.start_at_state("Awake", observed_start=False)
     # There is only one alignment, with index 0, so this should give an error:
     with pytest.raises(IndexError):
-        awake_nrem_experiment._get_slice_for_alignment(1)
+        awake_nrem_experiment._get_run_for_alignment(1)
 
 
-def test_get_slice_correct(sample_experiment, sample_alignments):
-    """Check that we get the right slice limits in a simple case."""
+def test_get_run_correct_limits(sample_experiment, sample_alignments):
+    """Check that we get the right run limits in a simple case."""
     correct_alignments = sample_alignments["REM_jump"]
     sample_experiment.start_at_state("REM")
     for (index, alignment) in enumerate(correct_alignments):
-        computed_slice = sample_experiment._get_slice_for_alignment(index)
-        assert computed_slice.start == alignment["start_run"]
-        assert computed_slice.stop == alignment["stop_run"] + 1
+        computed_run = sample_experiment._get_run_for_alignment(index)
+        assert computed_run.iloc[0].Start == alignment["start_epoch"]
+        assert computed_run.iloc[-1].Stop == alignment["stop_epoch"]
 
 
 def test_get_alignment_time_start(sample_experiment, sample_data):

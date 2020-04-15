@@ -232,21 +232,6 @@ class Experiment:
         self._check_alignment_exists(alignment)
         return self._alignment_runs[alignment]
 
-    def _get_slice_for_alignment(self, alignment):
-        """Compute the span of runs that a given alignment encompasses.
-
-        Returns a slice with the indices of the first and last run. This
-        is designed to be used with indexing operators which exclude the last
-        element, like `[]` or `.loc` from Pandas.
-        """
-        if alignment is None:
-            return slice(self._runs_start, None)
-        self._check_alignment_exists(alignment)
-        start, stop = self._breakpoints[alignment]
-        runs_start = self._runs[self._runs.Start == start].index[0]
-        runs_stop = self._runs[self._runs.Stop == stop].index[0]
-        return slice(runs_start, runs_stop + 1)
-
     def reset(self):
         """Set the starting epoch to the first one."""
         self._start = self._runs_start = 0
