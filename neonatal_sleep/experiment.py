@@ -50,7 +50,15 @@ class Experiment:
         self._breakpoints = []  # where to break different alignments
 
     def number_epochs(self, alignment=None):
-        """Return how many epochs are contained in this experiment."""
+        """Return how many epochs are contained in this experiment.
+
+        Can optionally consider only a subset of the data through the
+        alignment argument, otherwise all data will be considered
+        (excluding any that has been ignored through an alignment process).
+
+        :param alignment: the index of a subseries to consider, as a zero-base
+        integer, or None to consider the whole data.
+        """
         limits = self._get_slice_for_alignment(alignment)
         return self._runs[limits].Duration.sum()
 
@@ -60,7 +68,7 @@ class Experiment:
         considered_runs = self._runs[self._get_slice_for_alignment(alignment)]
         return considered_runs[considered_runs.From == state].Duration.sum()
 
-    def durations(self, state, alignment=None):
+    def durations(self, state):
         """Compute how long the patient spends in the given state each time.
 
         Returns an array of durations in epochs.
@@ -69,26 +77,20 @@ class Experiment:
         # Filter only the runs of the state we want...
         runs = self._runs[self._runs.From == state].Duration
         # ...and only from the time of interest onwards
-        return runs[self._get_slice_for_alignment(alignment)].values
+        return runs[self._runs_start:].values
 
-    def count_transitions(self, from_states, to_states, alignment=None):
+    def count_transitions(self, from_states, to_states):
         """Return how many transitions occur between the given states.
-
-        Can optionally consider only a subset of the data through the
-        alignment argument, otherwise all data will be considered
-        (excluding any that has been ignored through an alignment process).
 
         :param from_states: starting state names, as a list of strings
         :param to_states: target state names, as a list of strings
-        :param alignment: the index of a subseries to consider, as a zero-base
-        integer, or None to consider the whole data.
         """
         for state in from_states + to_states:
             check_state(state)
         matching = (self._runs.From.isin(from_states)
                     & self._runs.To.isin(to_states))
         # Return the number of transitions found in the region of interest
-        return matching[self._get_slice_for_alignment(alignment)].sum()
+        return matching[self._runs_start:].sum()
 
     def summarise(self):
         """Get a summary of the information from this experiment."""
