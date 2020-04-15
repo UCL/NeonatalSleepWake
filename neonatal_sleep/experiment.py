@@ -124,27 +124,27 @@ class Experiment:
         """Record how long we spend at each state and where we transition to."""
         # Find the duration of all consecutive sequences in the dataframe
         # then store them as tuples of (state, duration) in a new series
-        self._data["subgroups"] = (self._data.Sleep_wake
-                                   != self._data.Sleep_wake.shift(1)
-                                   ).cumsum()
-        runs = self._data.groupby("subgroups", as_index=False).apply(
+        data = self._data.copy()
+        data["subgroups"] = (data.Sleep_wake != data.Sleep_wake.shift(1)).cumsum()
+        runs = data.groupby("subgroups", as_index=False).apply(
             lambda x: (x.iloc[0, 0], len(x)))
         # Store this in a new dataframe, recording the state and how many
         # epochs were spent in it
-        self._runs = pd.DataFrame({
+        runs = pd.DataFrame({
             "From": [x[0] for x in runs],
             "Duration": [x[1] for x in runs]})
         # Now find what the next state is for each of these transitions
         # by checking the state at the total time spent so far
         # (we need reset_index to insert the states in the order given,
         # ignoring their index)
-        jump_times = self._runs.Duration.cumsum()
+        jump_times = runs.Duration.cumsum()
         to_indices = jump_times[:-1]
-        self._runs["To"] = self._data.iloc[to_indices, 0].reset_index(drop=True)
+        runs["To"] = data.iloc[to_indices, 0].reset_index(drop=True)
         # Also record the start and stop time of each run, for convenience
         # Each run lasts from Start until Stop, inclusive.
-        self._runs["Start"] = jump_times.shift(1, fill_value=0)
-        self._runs["Stop"] = jump_times - 1
+        runs["Start"] = jump_times.shift(1, fill_value=0)
+        runs["Stop"] = jump_times - 1
+        self._runs = runs
 
     def start_at_state(self, state, observed_start=True):
         """Shift the data so that it starts at the specified state.
@@ -277,9 +277,9 @@ class Experiment:
             # TODO Can this be done directly with the Series somehow?
             df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
                 list(self._runs[diff_runs_start:runs_stop].Duration)
-            # Copy remaining columns, except for subgroups
+            # Copy remaining columns
             # TODO Can probably do this better?
-            for col in self._data.columns[1:-1]:
+            for col in self._data.columns[1:]:
                 df[col] = self._data[col][start:stop+1]
             all_data.append(df.astype(str))
         return all_data
