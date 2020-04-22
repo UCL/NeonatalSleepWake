@@ -24,6 +24,8 @@ def sample_data():
         yaml_meta["Start_time"], "%H:%M").time()
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
     return data, yaml_meta
 
 
@@ -56,6 +58,8 @@ def awake_nrem_experiment():
         yaml_contents = yaml.safe_load(data_file)['awake_nrem_experiment']
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
     return Experiment(data, {})
 
 

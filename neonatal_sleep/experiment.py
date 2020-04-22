@@ -189,8 +189,8 @@ class Experiment:
         if matching_states.empty:
             raise AlignmentError(f"State {state} not found in data.")
         # Group them into contiguous runs
-        # - Get the indices of all instances
-        inds = matching_states.index
+        # - Get the indices of all instances (adjust so epochs start from 0)
+        inds = matching_states.index - 1
         # - Start the first run from the first index
         state_runs = []
         current_start = inds[0]
@@ -206,7 +206,7 @@ class Experiment:
                 state_runs.append((current_start, index - 1))
                 current_start = current_index = index
         # - End the last run at the last observation
-        state_runs.append((current_start, self._data.index[-1]))
+        state_runs.append((current_start, self._data.index[-1] - 1))
         # If we require knowing the start of a run but the first run starts
         # at the first observation, then discard it
         if observed_start and state_runs[0][0] == 0:
