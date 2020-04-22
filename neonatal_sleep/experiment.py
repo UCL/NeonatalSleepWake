@@ -181,39 +181,50 @@ class Experiment:
         has started, otherwise use its first occurrence
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
+        # Abort if state is not recognised
         check_state(state)
-        # Look into the compiled runs to find all occurrences of the state
-        matching_runs = self._runs[self._runs.From == state]
-        # Ignore the starting state unless we don't need to observe the start
-        if observed_start:
-            try:
-                matching_runs = matching_runs.drop(index=0)
-            except KeyError:  # first state is not the specified one, ignore
-                pass
-        # Set the start counters, or report an error if the state is not found
-        if matching_runs.empty:
-            message = (f"No transition to state {state} found in data."
-                       if observed_start
-                       else f"State {state} not found in data.")
-            raise AlignmentError(message)
-        else:
-            # Store the first and final epoch of each run in a list of tuples
-            self._breakpoints = ([
-                # Each run ends just before the next one starts...
-                (start, next_start - 1)
-                for (start, next_start)
-                in zip(matching_runs.Start, matching_runs.Start[1:])
-                ]
-                # ...except for the final one, so add that manually
-                + [(matching_runs.Start.iloc[-1], self._runs.Stop.iloc[-1])]
-            )
-            # TODO Also store the first and last run here, to avoid recomputing
-            # it later?
-            start_row = self._runs.iloc[:matching_runs.index[0]].Duration.sum()
-            # Create a compact representation for each sub-series
-            for (start, end) in self._breakpoints:
-                self._alignment_runs.append(self._compute_sojourns(start, end))
-            self._start_at_epoch(start_row)
+        # Find all instances of the given state
+        matching_states = self._data[self._data.Sleep_wake == state]
+        # If there are none, report that and abort
+        if matching_states.empty:
+            raise AlignmentError(f"State {state} not found in data.")
+        # Group them into contiguous runs
+        # - Get the indices of all instances
+        inds = matching_states.index
+        # - Start the first run from the first index
+        state_runs = []
+        current_start = inds[0]
+        current_index = inds[0]
+        # - For each other index:
+        for index in inds[1:]:
+            # - If it differs by exactly 1 from the last number, add it
+            if index == current_index + 1:
+                current_index = index
+            # - Otherwise, end the previous run
+            #   and start a new one from this index
+            else:
+                state_runs.append((current_start, index - 1))
+                current_start = current_index = index
+        # - End the last run at the last observation
+        state_runs.append((current_start, self._data.index[-1]))
+        # If we require knowing the start of a run but the first run starts
+        # at the first observation, then discard it
+        if observed_start and state_runs[0][0] == 0:
+            state_runs.pop(0)
+            # - If no runs remain, report that and abort
+            if not state_runs:
+                raise AlignmentError(f"No transition to state {state} "
+                                     f"found in data.")
+        # For each run:
+        for (start, stop) in state_runs:
+            # - Record the starting and stopping epoch of the alignment
+            self._breakpoints.append((start, stop))
+            # - Aggregate sleep states during the alignment
+            subseries = self._compute_sojourns(start, stop)
+            # - Store that aggregate so it can be retrieved by the index of the run
+            self._alignment_runs.append(subseries)
+        # Record the overall start of the alignment
+        self._start_at_epoch(state_runs[0][0])
 
     def _start_at_epoch(self, epoch_number):
         """Specify which epoch we should consider at the first.
