@@ -188,7 +188,55 @@ class Experiment:
         # If there are none, report that and abort
         if matching_states.empty:
             raise AlignmentError(f"State {state} not found in data.")
-        # Group them into contiguous runs
+        error_message = f"No transition to state {state} found in data."
+        self._create_alignments(matching_states, observed_start, error_message)
+
+    def start_at_stimulus(self, stimulus, observed_start=True):
+        """Shift the data so that it starts at the specified stimulus.
+
+        Epochs before this stimulus is found will be ignored when retrieving
+        statistics. If observed_start is True, epochs will be ignored until a
+        the start of the stimulus can be determined. Otherwise, the first
+        occurrence of the stimulus will be taken as the start, even if it is
+        the first epoch observed (and we therefore can't know how long the
+        stimulus had lasted by then).
+
+        Internally, this will find the appropriate points to "break" the data
+        into sub-series, such that each series starts with the specified
+        stimulus and runs until its next occurrence.
+
+        This method throws an AlignmentError if the specified alignment is not
+        possible, such as if the desired stimulus does not appear in the
+        data. It throws SleepStateNotRecognisedError if an invalid stimulus
+        name is passed.
+
+        :param stimulus: the name of the stimulus as a string (e.g. Held)
+        :param observed_start: if True, require that we know when the given
+        stimulus has started, otherwise use its first occurrence
+        :raises: AlignmentError, SleepStateNotRecognisedError
+        """
+        # Abort if stimulus is not recognised
+        assert stimulus in ["Held", "Painful_stimulation",
+                            "Somatosensory_stimulation"], "Stimulus not recognised"
+        column_name = f"{stimulus}_yes_no"
+        # Find all instances of the given stimulus
+        matching_states = self._data[self._data[column_name] == True]
+        # If there are none, report that and abort
+        if matching_states.empty:
+            raise AlignmentError(f"Stimulus {stimulus} not found in data.")
+        error_message = (f"No occurrence of {stimulus} with a clear start "
+                         f"found in data.")
+        self._create_alignments(matching_states, observed_start, error_message)
+
+    def _create_alignments(self, matching_states, observed_start, error_message):
+        """Do the heavy lifting for creating alignments.
+
+        :param matching_states: a DataFrame indicating which epochs should be chosen
+        :param observed_start: see start_at_state / start_at_stimulus
+        :param error_message: the message to accompany the error if no alignment
+                              is possible
+        """
+        # Group the epochs in question into contiguous runs of a sleep state
         # - Get the indices of all instances (adjust so epochs start from 0)
         inds = matching_states.index - 1
         # - Start the first run from the first index
@@ -213,8 +261,7 @@ class Experiment:
             state_runs.pop(0)
             # - If no runs remain, report that and abort
             if not state_runs:
-                raise AlignmentError(f"No transition to state {state} "
-                                     f"found in data.")
+                raise AlignmentError(error_message)
         # For each run:
         for (start, stop) in state_runs:
             # - Record the starting and stopping epoch of the alignment
