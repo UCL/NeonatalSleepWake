@@ -267,9 +267,6 @@ class Experiment:
         """
         all_data = []
         for (start, stop) in self._breakpoints:
-            # Find which run the start and stop epoch correspond to
-            runs_start = self._runs[self._runs.Start == start].index[0]
-            runs_stop = self._runs[self._runs.Stop == stop].index[0]
             df = pd.DataFrame()
             df["Sleep_wake"] = self._data.Sleep_wake[start:stop+1]
             # Add the information on state changes
@@ -278,11 +275,14 @@ class Experiment:
             # Don't consider the very first epoch as a state change
             if start == 0:
                 state_changed.iloc[0] = False
+            df["State_change_from_preceding_epoch"] = state_changed
+            # Find which run the start and stop epoch correspond to
+            runs_start = self._runs[self._runs.Start >= start].index[0]
+            runs_stop = self._runs[self._runs.Stop >= stop].index[0]
             # To find the state change details, start looking from the run
             # directly before this alignment starts, unless we are at the very
             # first epoch (in which case we will not count this as a change).
             diff_runs_start = runs_start - 1 if start != 0 else runs_start
-            df["State_change_from_preceding_epoch"] = state_changed
             df["Details_state_change"] = [""] * df.shape[0]
             state_change_details = [f"{row.From}_{row.To}"
                                     for row
