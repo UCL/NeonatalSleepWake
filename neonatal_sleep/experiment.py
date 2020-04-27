@@ -236,6 +236,9 @@ class Experiment:
         :param error_message: the message to accompany the error if no alignment
                               is possible
         """
+        # Forget any previous alignment
+        self._breakpoints.clear()
+        self._alignment_runs.clear()
         # Group the epochs in question into contiguous runs of a sleep state
         # - Get the indices of all instances (adjust so epochs start from 0)
         inds = self._data[matching].index - 1

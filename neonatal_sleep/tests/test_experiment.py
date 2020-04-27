@@ -183,6 +183,7 @@ def test_alignment_repeated(sample_experiment):
     sample_experiment.start_at_state("REM")
     start_after_first = sample_experiment._start
     runs_start_after_first = sample_experiment._runs_start
+    breakpoints_after_first = sample_experiment._breakpoints[:]
     # Align to nREM and check that the object has changed
     sample_experiment.start_at_state("nREM")
     assert sample_experiment._start != start_after_first
@@ -191,6 +192,7 @@ def test_alignment_repeated(sample_experiment):
     sample_experiment.start_at_state("REM")
     assert sample_experiment._start == start_after_first
     assert sample_experiment._runs_start == runs_start_after_first
+    assert sample_experiment._breakpoints == breakpoints_after_first
 
 
 def test_alignment_error_if_not_found(no_nrem_experiment):
