@@ -63,6 +63,22 @@ def awake_nrem_experiment():
     return Experiment(data, {})
 
 
+@pytest.fixture(scope="module")
+def stimulus_alignments():
+    """The correct alignments of the stimulus experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['stimulus_experiment']
+    return yaml_contents["alignments"]
+
+
+@pytest.fixture
+def stimulus_experiment():
+    """An Experiment object representing the small test experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['stimulus_experiment']
+    return Experiment(*load_file(yaml_contents['raw']))
+
+
 def test_metadata(sample_experiment, sample_data):
     assert all(getattr(sample_experiment, key) == value
                for key, value in sample_data[1].items())
@@ -221,6 +237,24 @@ def test_alignment_first_not_recorded(sample_experiment):
     assert data[0]["State_change_from_preceding_epoch"].iloc[0] == "False"
     # But the second alignment should still record a state change at its start.
     assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"
+
+
+def test_alignment_to_first_stimulus(stimulus_experiment, stimulus_alignments):
+    correct_alignments = stimulus_alignments["Painful_stimulation_jump"]
+    stimulus_experiment.start_at_stimulus("Painful_stimulation")
+    data = stimulus_experiment.get_alignment_data()
+    assert isinstance(data, list)
+    assert len(data) == len(correct_alignments)
+    # Check that the sleep states and limits are reported correctly
+    for computed, correct in zip(data, correct_alignments):
+        assert (computed.Sleep_wake == correct["states"]).all()
+        # Epochs in index are 1-based but fixture data is 0-based
+        assert computed.index[0] == correct["start_epoch"] + 1
+        assert computed.index[-1] == correct["stop_epoch"] + 1
+    # Check that we each alignment starts with an occurrence of the stimulus
+    for computed in data:
+        # The returned alignments contain all values as strings
+        assert computed["Painful_stimulation_yes_no"].iloc[0] == "True"
 
 
 def test_get_run_error_no_alignment(sample_experiment):

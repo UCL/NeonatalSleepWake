@@ -31,3 +31,20 @@ awake_nrem_experiment:
   # an experiment with one run of Awake, and one epoch of nREM
   data: tests/data/awake_nrem_experiment.csv
 
+stimulus_experiment:
+  raw: tests/data/stimulus_experiment.xlsx
+  data: tests/data/stimulus_experiment.csv
+  alignments:
+    Painful_stimulation_jump:
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - Trans
+          - REM
+          - Awake
