@@ -48,3 +48,21 @@ stimulus_experiment:
           - Trans
           - REM
           - Awake
+    Painful_stimulation_first:
+      - start_epoch: 0
+        stop_epoch: 1
+        states:
+          - Awake
+          - Awake
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - Trans
+          - REM
+          - Awake
