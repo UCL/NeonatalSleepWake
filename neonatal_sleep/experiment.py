@@ -184,9 +184,9 @@ class Experiment:
         # Abort if state is not recognised
         check_state(state)
         # Find all instances of the given state
-        matching_states = self._data[self._data.Sleep_wake == state]
+        matching_states = self._data.Sleep_wake == state
         # If there are none, report that and abort
-        if matching_states.empty:
+        if not matching_states.any():
             raise AlignmentError(f"State {state} not found in data.")
         error_message = f"No transition to state {state} found in data."
         self._create_alignments(matching_states, observed_start, error_message)
@@ -220,25 +220,25 @@ class Experiment:
                             "Somatosensory_stimulation"], "Stimulus not recognised"
         column_name = f"{stimulus}_yes_no"
         # Find all instances of the given stimulus
-        matching_states = self._data[self._data[column_name] == True]
+        matching = self._data[column_name] == True
         # If there are none, report that and abort
-        if matching_states.empty:
+        if not matching.any():
             raise AlignmentError(f"Stimulus {stimulus} not found in data.")
         error_message = (f"No occurrence of {stimulus} with a clear start "
                          f"found in data.")
-        self._create_alignments(matching_states, observed_start, error_message)
+        self._create_alignments(matching, observed_start, error_message)
 
-    def _create_alignments(self, matching_states, observed_start, error_message):
+    def _create_alignments(self, matching, observed_start, error_message):
         """Do the heavy lifting for creating alignments.
 
-        :param matching_states: a DataFrame indicating which epochs should be chosen
+        :param matching: a boolean Series indicating which epochs should be chosen
         :param observed_start: see start_at_state / start_at_stimulus
         :param error_message: the message to accompany the error if no alignment
                               is possible
         """
         # Group the epochs in question into contiguous runs of a sleep state
         # - Get the indices of all instances (adjust so epochs start from 0)
-        inds = matching_states.index - 1
+        inds = self._data[matching].index - 1
         # - Start the first run from the first index
         state_runs = []
         current_start = inds[0]
