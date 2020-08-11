@@ -416,7 +416,7 @@ class ExperimentCollection:
     def add_directory(self, path):
         """Add all experiment files in the given directory."""
         new_files = [os.path.join(path, filename)
-                     for filename in os.listdir(path)
+                     for filename in sorted(os.listdir(path))
                      if filename.endswith('.xlsx')]
         if not new_files:
             warnings.warn(f"No Excel files found in {path}.")
