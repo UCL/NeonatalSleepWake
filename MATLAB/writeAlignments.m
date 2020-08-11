@@ -1,13 +1,15 @@
 function writeAlignments(inputDir, state, firstObserved, outputDir)
 %WRITEALIGNMENTS Write alignments of sleep/wake timeseries data
-%   Usage: WRITEALIGNMENTS(INPUTDIR, STATE, FIRSTOBSERVED, OUTPUTDIR)
-%          WRITEALIGNMENTS(INPUTDIR, STATE, FIRSTOBSERVED)
-%          WRITEALIGNMENTS(INPUTDIR, STATE)
+%   Usage: WRITEALIGNMENTS(INPUTDIR, STATE_OR_STIM, FIRSTOBSERVED, OUTPUTDIR)
+%          WRITEALIGNMENTS(INPUTDIR, STATE_OR_STIM, FIRSTOBSERVED)
+%          WRITEALIGNMENTS(INPUTDIR, STATE_OR_STIM)
 %
 %   This function looks into the INPUTDIR directory, finds all .xlsx files
 %   there, and breaks the data contained therein into sub-series, so that
-%   each sub-series starts at the specified STATE (one of 'REM', 'nREM',
-%   'Awake' or 'Trans'). The resulting data is written to a file in the
+%   each sub-series starts at the specified state or stimulus
+%   (STATE_OR_STIM must be one of 'REM', 'nREM', 'Awake', 'Trans',
+%   'Painful_stimulation', 'Somatosensory_stimulation', or 'Held').
+%   The resulting data is written to a file in the
 %   directory OUTPUTDIR (if not specified, then the current directory).
 %   By default, the series are split at the first transition to the given
 %   state, but if FIRSTOBSERVED is true, then the first occurrence of that

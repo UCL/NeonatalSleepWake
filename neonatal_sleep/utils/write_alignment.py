@@ -11,7 +11,8 @@ from pathlib import Path
 import textwrap
 import warnings
 
-from ..common import SLEEP_STATE, AlignmentError
+from ..common import (AlignmentError, check_state, check_stimulus,
+                      SLEEP_STATE, SleepStateNotRecognisedError, STIMULI)
 from ..experiment import ExperimentCollection
 
 COLUMN_HEADERS = ["Baby_reference",	"Start_time",
@@ -42,15 +43,18 @@ def _last_stimulus_information(stimulus, experiment, alignment_index):
     return [stimulus_found, epochs_since_stimulation if stimulus_found else 0]
 
 
-def write_aligned_experiment(experiment, state, observed_start, output_file):
+def write_aligned_experiment(experiment, start_point, observed_start, output_file):
     """Write all alignments from a single experiment.
 
     :param experiment: the Experiment to be processed
-    :param state: the state to align to ("REM", "nREM", "Awake" or "Trans")
+    :param start_point: the state or stimulus to align to, as a string
     :param observed_start: if True, discard epochs until we see a transition to state
     :param output_file: file handle to write alignments in
     """
-    experiment.start_at_state(state, observed_start)
+    if start_point in SLEEP_STATE.categories:
+        experiment.start_at_state(start_point, observed_start)
+    elif start_point in STIMULI:
+        experiment.start_at_stimulus(start_point, observed_start)
     all_alignments = experiment.get_alignment_data()
     for (alignment_index, alignment_data) in enumerate(all_alignments):
         # Start counting alignments from 1 rather than 0, for clarity
@@ -93,10 +97,18 @@ def create_alignments(directory, state, first_observed, out_directory):
     """Write alignments for all files in a directory, along with metadata.
 
     :param directory: where to search for experiment files
-    :param state: the state to align to ("REM", "nREM", "Awake" or "Trans")
+    :param state: the state or stimulus to align to, as a string
     :param first_observed: if False, discard epochs until we see a transition to state
     :param out_directory: path for storing the output files
     """
+    # Make sure we are aligning to a valid sleep state or stimulus name
+    align_to_state = True
+    try:
+        check_state(state)
+    except SleepStateNotRecognisedError:
+        check_stimulus(state)
+        align_to_state = False
+
     collection = ExperimentCollection()
     collection.add_directory(directory)
 
@@ -125,7 +137,7 @@ def create_alignments(directory, state, first_observed, out_directory):
     This file contains contains metadata about the alignments in file
     {results_file}.
     The data was read from {input_location}.
-    The alignment was performed by finding {mode} state {state_name}.
+    The alignment was performed by finding {mode} {kind} {starting_point}.
     There were {number_failures} files which could not be aligned.
     This file was generated at {time} on {date}.
     """
@@ -134,7 +146,8 @@ def create_alignments(directory, state, first_observed, out_directory):
         results_file=out_data_path.absolute(),
         input_location=Path(directory).absolute(),
         mode="occurrences of" if first_observed else "transitions to",
-        state_name=state,
+        kind="state" if align_to_state else "stimulus",
+        starting_point=state,
         number_failures=failed_files,
         time=now.strftime("%H:%M"),
         date=now.strftime("%d %b %Y")
@@ -149,10 +162,10 @@ def entry_point():
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('directory', help='the path to the data files')
-    parser.add_argument('state', choices=SLEEP_STATE.categories,
-                        help='the first state to align to')
+    parser.add_argument('state', choices=SLEEP_STATE.categories + STIMULI,
+                        help='the first state or stimulus to align to')
     parser.add_argument('--first-occurrence', action='store_true',
-                        help='use the first occurrence of the state, '
+                        help='use the first occurrence of the state/stimulus, '
                              'rather than the first transition to it')
     parser.add_argument('--out_directory', default='.',
                         help='the directory to write results to')
