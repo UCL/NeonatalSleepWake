@@ -1,6 +1,8 @@
 """Tests for the methods of the Experiment class."""
 import datetime
+import difflib
 import filecmp
+import os
 
 import pandas as pd
 import pytest
@@ -11,6 +13,7 @@ from neonatal_sleep.common import (SLEEP_STATE,
                                    SleepStateNotRecognisedError)
 from neonatal_sleep.experiment import Experiment, ExperimentCollection
 from neonatal_sleep.load_file import load_file
+from neonatal_sleep.utils.write_alignment import create_alignments
 
 
 @pytest.fixture(scope="module")
@@ -379,3 +382,23 @@ def test_epochs_since_stimulation_exclude_simultaneous(awake_nrem_experiment):
     awake_nrem_experiment.start_at_state("nREM")
     assert awake_nrem_experiment.get_epochs_since_stimulation(
         "Painful_stimulation", 0) is None
+
+
+@pytest.mark.skipif(not os.environ.get("NEONATAL_TEST_DIR", ""), reason="No data dir")
+@pytest.mark.skipif(not os.environ.get("NEONATAL_ALIGNMENTS_REF", ""), reason="No location for reference alignments")
+@pytest.mark.parametrize("state", ["REM", "nREM", "Awake", "Trans"])
+@pytest.mark.parametrize("first", [True, False])
+def test_alignment_regression(tmpdir, state, first):
+    print(f"----\n{tmpdir}\n----")
+    file_prefix = "alignment_Categorical time series_last modified 06.12.19_"
+    filename = file_prefix + f"{'first' if first else 'jump'}_{state}" + ".csv"
+    correct_dir = os.environ["NEONATAL_ALIGNMENTS_REF"]
+    correct_output = os.path.join(correct_dir, filename)
+    assert os.path.exists(correct_output)
+    input_dir = os.environ["NEONATAL_TEST_DIR"]
+    create_alignments(input_dir, state, first, tmpdir)
+    with open(os.path.join(tmpdir, filename)) as new_file:
+        new_lines = new_file.readlines()
+    with open(correct_output) as old_file:
+        old_lines = old_file.readlines()
+    assert not list(difflib.unified_diff(new_lines, old_lines))
