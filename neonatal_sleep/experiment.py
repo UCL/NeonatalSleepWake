@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import AlignmentError, check_state
+from .common import AlignmentError, check_state, check_stimulus
 from .load_file import load_file
 
 
@@ -207,7 +207,7 @@ class Experiment:
 
         This method throws an AlignmentError if the specified alignment is not
         possible, such as if the desired stimulus does not appear in the
-        data. It throws SleepStateNotRecognisedError if an invalid stimulus
+        data. It throws StimulusNotRecognisedError if an invalid stimulus
         name is passed.
 
         :param stimulus: the name of the stimulus as a string (e.g. Held)
@@ -216,8 +216,7 @@ class Experiment:
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
         # Abort if stimulus is not recognised
-        assert stimulus in ["Held", "Painful_stimulation",
-                            "Somatosensory_stimulation"], "Stimulus not recognised"
+        check_stimulus(stimulus)
         column_name = f"{stimulus}_yes_no"
         # Find all instances of the given stimulus
         matching = self._data[column_name] == True

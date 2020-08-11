@@ -10,7 +10,8 @@ import yaml
 
 from neonatal_sleep.common import (SLEEP_STATE,
                                    AlignmentError,
-                                   SleepStateNotRecognisedError)
+                                   SleepStateNotRecognisedError,
+                                   StimulusNotRecognisedError)
 from neonatal_sleep.experiment import Experiment, ExperimentCollection
 from neonatal_sleep.load_file import load_file
 from neonatal_sleep.utils.write_alignment import create_alignments
@@ -210,10 +211,11 @@ def test_alignment_error_if_only_found_at_start(awake_nrem_experiment):
         awake_nrem_experiment.start_at_state("Awake")
 
 
-def test_alignment_error_if_invalid_state(sample_experiment):
+@pytest.mark.parametrize("wrong_name", ["Held", "NotAnActualState"])
+def test_alignment_error_if_invalid_state(sample_experiment, wrong_name):
     """Check for an error if an invalid state is specified."""
     with pytest.raises(SleepStateNotRecognisedError):
-        sample_experiment.start_at_state("NotAnActualState")
+        sample_experiment.start_at_state(wrong_name)
 
 
 def test_alignment_multiple(sample_experiment, sample_alignments):
@@ -276,6 +278,13 @@ def test_alignment_to_stimulus_first(stimulus_experiment, stimulus_alignments):
     data = stimulus_experiment.get_alignment_data()
     _compare_stimulus_alignments(data, correct_alignments,
                                  "Painful_stimulation")
+
+
+@pytest.mark.parametrize("wrong_name", ["REM", "random_name"])
+def test_alignment_error_if_invalid_stimulus(stimulus_experiment, wrong_name):
+    """Check for an error if an invalid stimulus is specified for alignment."""
+    with pytest.raises(StimulusNotRecognisedError):
+        stimulus_experiment.start_at_stimulus(wrong_name)
 
 
 def test_get_run_error_no_alignment(sample_experiment):
