@@ -80,7 +80,11 @@ def stimulus_experiment():
     """An Experiment object representing the small test experiment."""
     with open('tests/data/fixtures.yaml') as data_file:
         yaml_contents = yaml.safe_load(data_file)['stimulus_experiment']
-    return Experiment(*load_file(yaml_contents['raw']))
+    data = pd.read_csv(yaml_contents['data'])
+    data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
+    return Experiment(data, {})
 
 
 def test_metadata(sample_experiment, sample_data):

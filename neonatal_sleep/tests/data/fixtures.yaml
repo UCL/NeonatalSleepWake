@@ -32,7 +32,6 @@ awake_nrem_experiment:
   data: tests/data/awake_nrem_experiment.csv
 
 stimulus_experiment:
-  raw: tests/data/stimulus_experiment.xlsx
   data: tests/data/stimulus_experiment.csv
   alignments:
     Painful_stimulation_jump:
@@ -45,7 +44,7 @@ stimulus_experiment:
       - start_epoch: 5
         stop_epoch: 7
         states:
-          - Trans
+          - nREM
           - REM
           - Awake
     Painful_stimulation_first:
@@ -63,6 +62,6 @@ stimulus_experiment:
       - start_epoch: 5
         stop_epoch: 7
         states:
-          - Trans
+          - nREM
           - REM
           - Awake
