@@ -315,7 +315,8 @@ class Experiment:
         the data.
         """
         all_data = []
-        for (start, stop) in self._breakpoints:
+        for (alignment_index, (start, stop)) in enumerate(self._breakpoints):
+            runs = self._alignment_runs[alignment_index]
             df = pd.DataFrame()
             df["Sleep_wake"] = self._data.Sleep_wake[start:stop+1]
             # Add the information on state changes
@@ -326,23 +327,44 @@ class Experiment:
                 state_changed.iloc[0] = False
             df["State_change_from_preceding_epoch"] = state_changed
             # Find which run the start and stop epoch correspond to
-            runs_start = self._runs[self._runs.Start >= start].index[0]
-            runs_stop = self._runs[self._runs.Stop >= stop].index[0]
+            runs_start = runs[runs.Start >= start].index[0]
+            runs_stop = runs[runs.Stop >= stop].index[0]
             # To find the state change details, start looking from the run
             # directly before this alignment starts, unless we are at the very
             # first epoch (in which case we will not count this as a change).
-            diff_runs_start = runs_start - 1 if start != 0 else runs_start
+            #diff_runs_start = runs_start - 1 if start != 0 else runs_start
             df["Details_state_change"] = [""] * df.shape[0]
-            state_change_details = [f"{row.From}_{row.To}"
-                                    for row
-                                    # Exclude the last run (from last state to NaN)
-                                    in self._runs[diff_runs_start:runs_stop].itertuples()]
+            state_change_states = []
+            if state_changed.iloc[0]:
+                previous_state = self._data.loc[start].Sleep_wake  # data indexing starts at 1
+                next_state = runs.iloc[runs_start].From
+                state_change_states.append((previous_state, next_state))
+            for row in runs[runs_start:runs_stop].itertuples():
+                state_change_states.append((row.From, row.To))
+            # if we're not at the very last state: (actually we don't care about this?)
+            # if stop + 1 != len(self._data):  # data indexing starts at 1
+            #     state_change_states.append((runs[runs_stop].From, self._data[stop + 2]))
+            state_change_details = [f"{row[0]}_{row[1]}"
+                                    for row in state_change_states]
+            # state_change_details = [f"{row.From}_{row.To}"
+            #                         for row
+            #                         # Exclude the last run (from last state to NaN)
+            #                         in runs[diff_runs_start:runs_stop].itertuples()]
             df.loc[state_changed, "Details_state_change"] = state_change_details
+            # Finding how many epochs occure before a state change is easy within the run,
+            # but for the first state change, we'll need to look at the overall data
+            # which (overall) run ends with the first state change in this run?
+            try:
+                last_overall_run = self._runs[self._runs.Stop == start - 1].index[0]
+                duration_of_last = [self._runs.iloc[last_overall_run].Duration]
+            except IndexError:  # if we're at the very start?
+                duration_of_last = []
             df["How_many_epochs_of_preceding_state_before_state_change"] = [""] * df.shape[0]
             # The below needs to be a list because otherwise the indexing is messed up
             # TODO Can this be done directly with the Series somehow?
-            df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = \
-                list(self._runs[diff_runs_start:runs_stop].Duration)
+            df.loc[state_changed, "How_many_epochs_of_preceding_state_before_state_change"] = (
+                duration_of_last + list(runs[runs_start:runs_stop].Duration)
+            )
             # Copy remaining columns
             # TODO Can probably do this better?
             for col in self._data.columns[1:]:
