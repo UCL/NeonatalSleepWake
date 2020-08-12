@@ -463,7 +463,7 @@ def test_alignment_regression(tmpdir, state, first):
     correct_output = os.path.join(correct_dir, filename)
     assert os.path.exists(correct_output)
     input_dir = os.environ["NEONATAL_TEST_DIR"]
-    create_alignments(input_dir, state, first, tmpdir)
+    create_alignments(input_dir, state, first, lead=0, out_directory=tmpdir)
     with open(os.path.join(tmpdir, filename)) as new_file:
         new_lines = new_file.readlines()
     with open(correct_output) as old_file:
