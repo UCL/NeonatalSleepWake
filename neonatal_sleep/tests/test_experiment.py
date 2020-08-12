@@ -1,6 +1,8 @@
 """Tests for the methods of the Experiment class."""
 import datetime
+import difflib
 import filecmp
+import os
 
 import pandas as pd
 import pytest
@@ -8,9 +10,12 @@ import yaml
 
 from neonatal_sleep.common import (SLEEP_STATE,
                                    AlignmentError,
-                                   SleepStateNotRecognisedError)
+                                   LeadInTooLargeError,
+                                   SleepStateNotRecognisedError,
+                                   StimulusNotRecognisedError)
 from neonatal_sleep.experiment import Experiment, ExperimentCollection
 from neonatal_sleep.load_file import load_file
+from neonatal_sleep.utils.write_alignment import create_alignments
 
 
 @pytest.fixture(scope="module")
@@ -24,6 +29,8 @@ def sample_data():
         yaml_meta["Start_time"], "%H:%M").time()
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
     return data, yaml_meta
 
 
@@ -56,6 +63,28 @@ def awake_nrem_experiment():
         yaml_contents = yaml.safe_load(data_file)['awake_nrem_experiment']
     data = pd.read_csv(yaml_contents['data'])
     data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
+    return Experiment(data, {})
+
+
+@pytest.fixture(scope="module")
+def stimulus_alignments():
+    """The correct alignments of the stimulus experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['stimulus_experiment']
+    return yaml_contents["alignments"]
+
+
+@pytest.fixture
+def stimulus_experiment():
+    """An Experiment object representing the small test experiment."""
+    with open('tests/data/fixtures.yaml') as data_file:
+        yaml_contents = yaml.safe_load(data_file)['stimulus_experiment']
+    data = pd.read_csv(yaml_contents['data'])
+    data['Sleep_wake'] = data['Sleep_wake'].astype(SLEEP_STATE)
+    # Real data indices start from 1
+    data.index = data.index + 1
     return Experiment(data, {})
 
 
@@ -163,6 +192,7 @@ def test_alignment_repeated(sample_experiment):
     sample_experiment.start_at_state("REM")
     start_after_first = sample_experiment._start
     runs_start_after_first = sample_experiment._runs_start
+    breakpoints_after_first = sample_experiment._breakpoints[:]
     # Align to nREM and check that the object has changed
     sample_experiment.start_at_state("nREM")
     assert sample_experiment._start != start_after_first
@@ -171,6 +201,7 @@ def test_alignment_repeated(sample_experiment):
     sample_experiment.start_at_state("REM")
     assert sample_experiment._start == start_after_first
     assert sample_experiment._runs_start == runs_start_after_first
+    assert sample_experiment._breakpoints == breakpoints_after_first
 
 
 def test_alignment_error_if_not_found(no_nrem_experiment):
@@ -185,10 +216,11 @@ def test_alignment_error_if_only_found_at_start(awake_nrem_experiment):
         awake_nrem_experiment.start_at_state("Awake")
 
 
-def test_alignment_error_if_invalid_state(sample_experiment):
+@pytest.mark.parametrize("wrong_name", ["Held", "NotAnActualState"])
+def test_alignment_error_if_invalid_state(sample_experiment, wrong_name):
     """Check for an error if an invalid state is specified."""
     with pytest.raises(SleepStateNotRecognisedError):
-        sample_experiment.start_at_state("NotAnActualState")
+        sample_experiment.start_at_state(wrong_name)
 
 
 def test_alignment_multiple(sample_experiment, sample_alignments):
@@ -219,28 +251,125 @@ def test_alignment_first_not_recorded(sample_experiment):
     assert data[1]["State_change_from_preceding_epoch"].iloc[0] == "True"
 
 
-def test_get_slice_error_no_alignment(sample_experiment):
+def _compare_stimulus_alignments(computed_all, expected_all, stimulus):
+    assert isinstance(computed_all, list)
+    assert len(computed_all) == len(expected_all)
+    # Check that the sleep states and limits are reported correctly
+    for computed, correct in zip(computed_all, expected_all):
+        assert (computed.Sleep_wake == correct["states"]).all()
+        # Epochs in index are 1-based but fixture data is 0-based
+        assert computed.index[0] == correct["start_epoch"] + 1
+        assert computed.index[-1] == correct["stop_epoch"] + 1
+    # Check that each alignment starts with an occurrence of the stimulus
+    for computed in computed_all:
+        # The returned alignments contain all values as strings
+        assert computed[f"{stimulus}_yes_no"].iloc[0] == "True"
+
+
+def test_alignment_to_stimulus_jump(stimulus_experiment, stimulus_alignments):
+    """Check that aligning to the start of a stimulus works as expected."""
+    correct_alignments = stimulus_alignments["Painful_stimulation_jump"]
+    stimulus_experiment.start_at_stimulus("Painful_stimulation")
+    data = stimulus_experiment.get_alignment_data()
+    _compare_stimulus_alignments(data, correct_alignments,
+                                 "Painful_stimulation")
+
+
+def test_alignment_to_stimulus_first(stimulus_experiment, stimulus_alignments):
+    """Check that aligning to a stimulus occurrence works as expected."""
+    correct_alignments = stimulus_alignments["Painful_stimulation_first"]
+    stimulus_experiment.start_at_stimulus("Painful_stimulation",
+                                          observed_start=False)
+    data = stimulus_experiment.get_alignment_data()
+    _compare_stimulus_alignments(data, correct_alignments,
+                                 "Painful_stimulation")
+
+
+@pytest.mark.parametrize("wrong_name", ["REM", "random_name"])
+def test_alignment_error_if_invalid_stimulus(stimulus_experiment, wrong_name):
+    """Check for an error if an invalid stimulus is specified for alignment."""
+    with pytest.raises(StimulusNotRecognisedError):
+        stimulus_experiment.start_at_stimulus(wrong_name)
+
+
+def test_alignment_zero_lookahead_invariable(sample_experiment):
+    """Check that a 'look_ahead' value of 0 does nothing when aligning."""
+    state = "REM"
+    sample_experiment.start_at_state(state)
+    base_alignments = sample_experiment.get_alignment_data()
+    sample_experiment.start_at_state(state, look_ahead=0)
+    new_alignments = sample_experiment.get_alignment_data()
+    assert all(
+        (new == base).all().all()
+        for (new, base) in zip(new_alignments, base_alignments)
+    )
+    assert sample_experiment.lookahead_discards == 0
+
+
+def test_alignment_lookahead_correct(sample_experiment, sample_alignments):
+    """Check look_ahead behaves as expected for a simple experiment."""
+    epochs_before = 1
+    state = "REM"
+    base_alignments = sample_alignments[state + "_jump"]
+    sample_experiment.start_at_state(state, True, epochs_before)
+    alignments = sample_experiment.get_alignment_data()
+    # There should be just as many alignments as with no look-ahead
+    assert len(alignments) == len(base_alignments)
+    assert sample_experiment.lookahead_discards == 0
+    # Each alignmnent should include all states in the base alignment,
+    # plus epochs_before additional epochs at the start
+    for computed, base in zip(alignments, base_alignments):
+        assert len(computed) == len(base["states"]) + epochs_before
+        assert (computed.Sleep_wake.iloc[epochs_before:] == base["states"]).all()
+
+
+def test_alignment_skipped_if_lookahead_too_large(sample_experiment,
+                                                  sample_alignments):
+    """Check that too large a lead-in time makes us skip an alignment."""
+    epochs_before = 3
+    state = "REM"
+    base_alignments = sample_alignments[state + "_jump"]
+    sample_experiment.start_at_state(state, True, epochs_before)
+    alignments = sample_experiment.get_alignment_data()
+    # In this experiment, the first alignment starts 2 epochs in. Since we
+    # use a look-ahead of 3, the first alignment should be skipped...
+    assert len(alignments) == len(base_alignments) - 1
+    assert sample_experiment.lookahead_discards == 1
+    # ...but the remaining ones should be unaffected (apart from the lead-in)
+    for computed, base in zip(alignments[1:], base_alignments):
+        assert len(computed) == len(base["states"]) + epochs_before
+        assert (computed.Sleep_wake.iloc[epochs_before:] == base["states"]).all()
+
+
+def test_alignment_error_if_lookahead_too_large_for_all(sample_experiment):
+    """Check that we get an error if the lead-in excludes all alignments."""
+    epochs_before = 4  # nREM has only 1 run, starting 3 epochs in
+    with pytest.raises(LeadInTooLargeError):
+        sample_experiment.start_at_state("nREM", look_ahead=epochs_before)
+
+
+def test_get_run_error_no_alignment(sample_experiment):
     """Check for an error when no alignments have been created."""
     with pytest.raises(AlignmentError):
-        sample_experiment._get_slice_for_alignment(0)
+        sample_experiment._get_run_for_alignment(0)
 
 
-def test_get_slice_error_not_enough_alignments(awake_nrem_experiment):
+def test_get_run_error_not_enough_alignments(awake_nrem_experiment):
     """Check for an error when using an invalid alignment index."""
     awake_nrem_experiment.start_at_state("Awake", observed_start=False)
     # There is only one alignment, with index 0, so this should give an error:
     with pytest.raises(IndexError):
-        awake_nrem_experiment._get_slice_for_alignment(1)
+        awake_nrem_experiment._get_run_for_alignment(1)
 
 
-def test_get_slice_correct(sample_experiment, sample_alignments):
-    """Check that we get the right slice limits in a simple case."""
+def test_get_run_correct_limits(sample_experiment, sample_alignments):
+    """Check that we get the right run limits in a simple case."""
     correct_alignments = sample_alignments["REM_jump"]
     sample_experiment.start_at_state("REM")
     for (index, alignment) in enumerate(correct_alignments):
-        computed_slice = sample_experiment._get_slice_for_alignment(index)
-        assert computed_slice.start == alignment["start_run"]
-        assert computed_slice.stop == alignment["stop_run"] + 1
+        computed_run = sample_experiment._get_run_for_alignment(index)
+        assert computed_run.iloc[0].Start == alignment["start_epoch"]
+        assert computed_run.iloc[-1].Stop == alignment["stop_epoch"]
 
 
 def test_get_alignment_time_start(sample_experiment, sample_data):
@@ -323,3 +452,23 @@ def test_epochs_since_stimulation_exclude_simultaneous(awake_nrem_experiment):
     awake_nrem_experiment.start_at_state("nREM")
     assert awake_nrem_experiment.get_epochs_since_stimulation(
         "Painful_stimulation", 0) is None
+
+
+@pytest.mark.skipif(not os.environ.get("NEONATAL_TEST_DIR", ""), reason="No data dir")
+@pytest.mark.skipif(not os.environ.get("NEONATAL_ALIGNMENTS_REF", ""), reason="No location for reference alignments")
+@pytest.mark.parametrize("state", ["REM", "nREM", "Awake", "Trans"])
+@pytest.mark.parametrize("first", [True, False])
+def test_alignment_regression(tmpdir, state, first):
+    print(f"----\n{tmpdir}\n----")
+    file_prefix = "alignment_Categorical time series_last modified 06.12.19_"
+    filename = file_prefix + f"{'first' if first else 'jump'}_{state}" + ".csv"
+    correct_dir = os.environ["NEONATAL_ALIGNMENTS_REF"]
+    correct_output = os.path.join(correct_dir, filename)
+    assert os.path.exists(correct_output)
+    input_dir = os.environ["NEONATAL_TEST_DIR"]
+    create_alignments(input_dir, state, first, lead=0, out_directory=tmpdir)
+    with open(os.path.join(tmpdir, filename)) as new_file:
+        new_lines = new_file.readlines()
+    with open(correct_output) as old_file:
+        old_lines = old_file.readlines()
+    assert not list(difflib.unified_diff(new_lines, old_lines))

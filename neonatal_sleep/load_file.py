@@ -97,6 +97,7 @@ def load_file(path):
     df.columns.name = df.index.name
     df.index.name = None
     data = df.T
+    data.index = pd.RangeIndex(start=1, stop=n_epochs + 1)
     # Convert the values into something more standard than strings
     data = convert_data_types(data)
     # Read metadata from the second row

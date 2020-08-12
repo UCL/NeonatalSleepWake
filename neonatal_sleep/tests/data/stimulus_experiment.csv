@@ -1,0 +1,9 @@
+Sleep_wake,Painful_stimulation_yes_no,Somatosensory_stimulation_yes_no,Held_yes_no
+Awake,TRUE,TRUE,FALSE
+Awake,FALSE,TRUE,FALSE
+REM,TRUE,TRUE,FALSE
+nREM,FALSE,FALSE,FALSE
+nREM,FALSE,TRUE,TRUE
+nREM,TRUE,TRUE,TRUE
+REM,FALSE,TRUE,TRUE
+Awake,FALSE,TRUE,TRUE

@@ -3,15 +3,15 @@ sample_experiment:
   data: tests/data/sample_experiment.csv
   alignments:
     REM_jump:
-      - start_run: 1
-        stop_run: 3
+      - start_epoch: 2
+        stop_epoch: 5
         states:
           - REM
           - nREM
           - nREM
           - Trans
-      - start_run: 4
-        stop_run: 5
+      - start_epoch: 6
+        stop_epoch: 7
         states:
           - REM
           - Awake
@@ -31,3 +31,37 @@ awake_nrem_experiment:
   # an experiment with one run of Awake, and one epoch of nREM
   data: tests/data/awake_nrem_experiment.csv
 
+stimulus_experiment:
+  data: tests/data/stimulus_experiment.csv
+  alignments:
+    Painful_stimulation_jump:
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - nREM
+          - REM
+          - Awake
+    Painful_stimulation_first:
+      - start_epoch: 0
+        stop_epoch: 1
+        states:
+          - Awake
+          - Awake
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - nREM
+          - REM
+          - Awake
