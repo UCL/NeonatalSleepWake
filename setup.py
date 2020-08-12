@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
 
 dependencies_base = [
+    "matplotlib",
     "numpy",
     "pandas",
     "xlrd",
@@ -27,7 +28,8 @@ setup(
     entry_points={
         "console_scripts": [
             "write_summaries = neonatal_sleep.utils.write_summaries:entry_point",
-            "write_alignments = neonatal_sleep.utils.write_alignment:entry_point"
+            "write_alignments = neonatal_sleep.utils.write_alignment:entry_point",
+            "hypnogram = neonatal_sleep.utils.plotting:entry_point",
         ]
     }
 )
