@@ -10,6 +10,7 @@ import yaml
 
 from neonatal_sleep.common import (SLEEP_STATE,
                                    AlignmentError,
+                                   LeadInTooLargeError,
                                    SleepStateNotRecognisedError,
                                    StimulusNotRecognisedError)
 from neonatal_sleep.experiment import Experiment, ExperimentCollection
@@ -335,6 +336,13 @@ def test_alignment_skipped_if_lookahead_too_large(sample_experiment,
     for computed, base in zip(alignments[1:], base_alignments):
         assert len(computed) == len(base["states"]) + epochs_before
         assert (computed.Sleep_wake.iloc[epochs_before:] == base["states"]).all()
+
+
+def test_alignment_error_if_lookahead_too_large_for_all(sample_experiment):
+    """Check that we get an error if the lead-in excludes all alignments."""
+    epochs_before = 4  # nREM has only 1 run, starting 3 epochs in
+    with pytest.raises(LeadInTooLargeError):
+        sample_experiment.start_at_state("nREM", look_ahead=epochs_before)
 
 
 def test_get_run_error_no_alignment(sample_experiment):

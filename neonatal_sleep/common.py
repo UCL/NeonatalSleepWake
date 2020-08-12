@@ -30,6 +30,16 @@ class AlignmentError(RuntimeError):
     pass
 
 
+class LeadInTooLargeError(AlignmentError):
+    """An exception for when the lead-in time excludes all possible alignments.
+
+    For example, if there are instances of a state but they all occur no later
+    than epoch 5, requesting a look-ahead/lead-in value of 10 should raise this
+    error specifically.
+    """
+    pass
+
+
 def check_state(state):
     """Check that the given state name is valid, or raise an error."""
     if state not in SLEEP_STATE.categories:

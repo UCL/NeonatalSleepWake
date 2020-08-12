@@ -5,7 +5,11 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .common import AlignmentError, check_state, check_stimulus
+from .common import (AlignmentError,
+                     check_state,
+                     check_stimulus,
+                     LeadInTooLargeError,
+                     )
 from .load_file import load_file
 
 
@@ -288,9 +292,12 @@ class Experiment:
             subseries = self._compute_sojourns(start, stop)
             # - Store that aggregate so it can be retrieved by the index of the run
             self._alignment_runs.append(subseries)
+        # If we've discarded everything, throw an error
+        if not self._breakpoints:
+            raise LeadInTooLargeError("State or stimulus found, but the "
+                                      "lead-in time is too high.")
         # Record the overall start of the alignment
-        if self._breakpoints:
-            self._start_at_epoch(self._breakpoints[0][0])
+        self._start_at_epoch(self._breakpoints[0][0])
 
     def _start_at_epoch(self, epoch_number):
         """Specify which epoch we should consider at the first.
