@@ -157,7 +157,7 @@ class Experiment:
         runs["Stop"] = first_row + jump_times - 1
         return runs
 
-    def start_at_state(self, state, observed_start=True):
+    def start_at_state(self, state, observed_start=True, look_ahead=0):
         """Shift the data so that it starts at the specified state.
 
         Epochs before this state is found will be ignored when retrieving
@@ -165,11 +165,13 @@ class Experiment:
         transition to the given state is found. Otherwise, the first occurrence
         of the state will be taken as the start, even if it is the first epoch
         observed (and we therefore can't know how long the patient had been in
-        that state already).
+        that state already). Optionally, the data can be shifted further, so
+        that it starts a specified number of epochs before the given state;
+        this number of epochs is given by the look_ahead argument (default: 0).
 
         Internally, this will find the appropriate points to "break" the data
         into sub-series, such that each series starts with the specified state
-        and runs until its next occurrence.
+        (or look_ahead epochs before it) and runs until its next occurrence.
 
         This method throws an AlignmentError if the specified alignment is not
         possible, such as if the desired starting state does not appear in the
@@ -179,6 +181,7 @@ class Experiment:
         :param state: the name of the state as a string (e.g. Awake, nREM)
         :param observed_start: if True, require that we know when the given
         has started, otherwise use its first occurrence
+        :param look_ahead: how many epochs to start before the given state
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
         # Abort if state is not recognised
@@ -189,9 +192,10 @@ class Experiment:
         if not matching_states.any():
             raise AlignmentError(f"State {state} not found in data.")
         error_message = f"No transition to state {state} found in data."
-        self._create_alignments(matching_states, observed_start, error_message)
+        self._create_alignments(matching_states, observed_start, look_ahead,
+                                error_message)
 
-    def start_at_stimulus(self, stimulus, observed_start=True):
+    def start_at_stimulus(self, stimulus, observed_start=True, look_ahead=0):
         """Shift the data so that it starts at the specified stimulus.
 
         Epochs before this stimulus is found will be ignored when retrieving
@@ -199,11 +203,15 @@ class Experiment:
         the start of the stimulus can be determined. Otherwise, the first
         occurrence of the stimulus will be taken as the start, even if it is
         the first epoch observed (and we therefore can't know how long the
-        stimulus had lasted by then).
+        stimulus had lasted by then). Optionally, the data can be shifted
+        further, so that it starts a specified number of epochs before the
+        given stimulus; this number of epochs is given by the look_ahead
+        argument (default: 0).
 
         Internally, this will find the appropriate points to "break" the data
         into sub-series, such that each series starts with the specified
-        stimulus and runs until its next occurrence.
+        stimulus (or look_ahead epochs before it) and runs until its next
+        occurrence.
 
         This method throws an AlignmentError if the specified alignment is not
         possible, such as if the desired stimulus does not appear in the
@@ -212,6 +220,7 @@ class Experiment:
 
         :param stimulus: the name of the stimulus as a string (e.g. Held)
         :param observed_start: if True, require that we know when the given
+        :param look_ahead: how many epochs to start before the given stimulus
         stimulus has started, otherwise use its first occurrence
         :raises: AlignmentError, SleepStateNotRecognisedError
         """
@@ -225,13 +234,15 @@ class Experiment:
             raise AlignmentError(f"Stimulus {stimulus} not found in data.")
         error_message = (f"No occurrence of {stimulus} with a clear start "
                          f"found in data.")
-        self._create_alignments(matching, observed_start, error_message)
+        self._create_alignments(matching, observed_start, look_ahead,
+                                error_message)
 
-    def _create_alignments(self, matching, observed_start, error_message):
+    def _create_alignments(self, matching, observed_start, look_ahead, error_message):
         """Do the heavy lifting for creating alignments.
 
         :param matching: a boolean Series indicating which epochs should be chosen
         :param observed_start: see start_at_state / start_at_stimulus
+        :param look_ahead: see start_at_state / start_at_stimulus
         :param error_message: the message to accompany the error if no alignment
                               is possible
         """
@@ -265,7 +276,12 @@ class Experiment:
             if not state_runs:
                 raise AlignmentError(error_message)
         # For each run:
-        for (start, stop) in state_runs:
+        for (original_start, stop) in state_runs:
+            # - Move back the starting epoch as specified
+            start = original_start - look_ahead
+            # - If this takes us before the start of the data, discard this run
+            if start < 0:
+                continue
             # - Record the starting and stopping epoch of the alignment
             self._breakpoints.append((start, stop))
             # - Aggregate sleep states during the alignment
@@ -273,7 +289,8 @@ class Experiment:
             # - Store that aggregate so it can be retrieved by the index of the run
             self._alignment_runs.append(subseries)
         # Record the overall start of the alignment
-        self._start_at_epoch(state_runs[0][0])
+        if self._breakpoints:
+            self._start_at_epoch(self._breakpoints[0][0])
 
     def _start_at_epoch(self, epoch_number):
         """Specify which epoch we should consider at the first.
