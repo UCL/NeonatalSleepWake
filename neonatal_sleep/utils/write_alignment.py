@@ -105,6 +105,9 @@ def create_alignments(directory, state, first_observed, lead, out_directory):
     :param lead: how many epochs before the state/stimulus to start the alignments
     :param out_directory: path for storing the output files
     """
+    # This is not necessary when using the command-line interface, but MATLAB
+    # will pass numbers to this function as floats by default.
+    lead = int(lead)
     # Make sure we are aligning to a valid sleep state or stimulus name
     align_to_state = True
     try:
