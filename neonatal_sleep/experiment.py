@@ -53,6 +53,8 @@ class Experiment:
         self._runs_start = 0  # which run to start reading from
         self._breakpoints = []  # where to break different alignments
         self._alignment_runs = []  # the runs for each alignment
+        # To record how many subseries have been discarded due to lead-in
+        self.lookahead_discards = 0
 
     def number_epochs(self, alignment=None):
         """Return how many epochs are contained in this experiment.
@@ -251,8 +253,7 @@ class Experiment:
                               is possible
         """
         # Forget any previous alignment
-        self._breakpoints.clear()
-        self._alignment_runs.clear()
+        self.reset()
         # Group the epochs in question into contiguous runs of a sleep state
         # - Get the indices of all instances (adjust so epochs start from 0)
         inds = self._data[matching].index - 1
@@ -285,6 +286,7 @@ class Experiment:
             start = original_start - look_ahead
             # - If this takes us before the start of the data, discard this run
             if start < 0:
+                self.lookahead_discards += 1
                 continue
             # - Record the starting and stopping epoch of the alignment
             self._breakpoints.append((start, stop))
@@ -321,6 +323,7 @@ class Experiment:
         self._start = self._runs_start = 0
         self._breakpoints.clear()
         self._alignment_runs.clear()
+        self.lookahead_discards = 0
 
     def get_full_data_since_onset(self):
         """Get the data from the first epoch onwards, after alignment.

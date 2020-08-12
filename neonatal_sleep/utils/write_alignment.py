@@ -128,6 +128,7 @@ def create_alignments(directory, state, first_observed, lead, out_directory):
     out_data_path = Path(out_directory, out_base_name + ".csv")
     failed_files = 0  # how many files we couldn't align
     lead_in_failures = 0  # how many we discarded due to too high lead-in time
+    lead_in_discards = 0  # how many series we discarded due to the same reason
     with open(out_data_path, 'w') as output_data_file:
         # Write the header information
         output_data_file.write(",".join(COLUMN_HEADERS) + "\n")
@@ -135,6 +136,7 @@ def create_alignments(directory, state, first_observed, lead, out_directory):
             try:
                 write_aligned_experiment(exp, state, not first_observed, lead,
                                          output_data_file)
+                lead_in_discards += exp.lookahead_discards
             except AlignmentError as error:
                 warnings.warn(
                     f"Could not align data for reference {exp.Baby_reference}: {error}")
@@ -152,6 +154,7 @@ def create_alignments(directory, state, first_observed, lead, out_directory):
     with a lead-in time of {lead_in} epoch(s).
     There were {number_failures} files which could not be aligned.
     {number_lead_in_failures} of these were because the lead-in time was too high.
+    A further {number_lead_in_discards} subseries were discarded for the same reason.
     This file was generated at {time} on {date}.
     """
     now = datetime.datetime.now()
@@ -164,6 +167,7 @@ def create_alignments(directory, state, first_observed, lead, out_directory):
         lead_in=lead,
         number_failures=failed_files,
         number_lead_in_failures=lead_in_failures,
+        number_lead_in_discards=lead_in_discards,
         time=now.strftime("%H:%M"),
         date=now.strftime("%d %b %Y")
     )
