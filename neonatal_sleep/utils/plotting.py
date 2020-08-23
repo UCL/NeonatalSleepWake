@@ -27,7 +27,7 @@ colours = ["#4574c7", "#ec7d27", "#a5a5a5", "#febf00"]
 patterns = ['/', '+', 'x', '.']
 
 
-def plot_hypnogram(exp, initial_state, find_jump, output_file=None):
+def plot_hypnogram(exp, initial_state, find_jump, lead_in, output_file=None):
     """Plot a hypnogram corresponding to the given experiment.
 
     First shifts the data so that the first state to be plotted is the given
@@ -39,7 +39,9 @@ def plot_hypnogram(exp, initial_state, find_jump, output_file=None):
     first occurrence of that state, even if it is the very first state in the
     series.
     """
-    exp.start_at_state(initial_state, observed_start=find_jump)
+    exp.start_at_state(initial_state,
+                       observed_start=find_jump,
+                       look_ahead=lead_in)
     data = exp.get_full_data_since_onset()
     # Consider the first epoch of the alignment as time 0
     times = data.index - data.index[0]
@@ -90,6 +92,9 @@ def entry_point():
     parser.add_argument('--first-occurrence', action='store_true',
                         help='use the first occurrence of the state, '
                              'rather than the first transition to it')
+    parser.add_argument('--lead-in', type=int, default=0,
+                        help='start alignments this many epochs before '
+                             'the given state/stimulus')
     args = parser.parse_args()
     input_path = Path(args.input)
     if input_path.suffix != '.xlsx':
@@ -98,9 +103,11 @@ def entry_point():
     exp = Experiment(*load_file(args.input))
     initial_state = args.state
     find_jump = not args.first_occurrence
-    output_file = "hypnogram_{}_{}_{}.eps".format(
-        input_path.stem, initial_state, 'jump' if find_jump else 'first')
-    plot_hypnogram(exp, initial_state, find_jump, output_file)
+    lead_in = args.lead_in
+    output_file = "hypnogram_{}_{}_{}{}.eps".format(
+        input_path.stem, initial_state, 'jump' if find_jump else 'first',
+        f'_{lead_in}_before' if lead_in else '')
+    plot_hypnogram(exp, initial_state, find_jump, lead_in, output_file)
 
 
 if __name__ == "__main__":
