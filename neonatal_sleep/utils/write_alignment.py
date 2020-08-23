@@ -12,7 +12,7 @@ import textwrap
 import warnings
 
 from ..common import (AlignmentError, check_state, check_stimulus,
-                      LeadInTooLargeError, SLEEP_STATE,
+                      INITIAL_OPTIONS, LeadInTooLargeError, SLEEP_STATE,
                       SleepStateNotRecognisedError, STIMULI)
 from ..experiment import ExperimentCollection
 
@@ -187,7 +187,7 @@ def entry_point():
         description='Write out aligned data.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('directory', help='the path to the data files')
-    parser.add_argument('state', choices=list(SLEEP_STATE.categories) + STIMULI,
+    parser.add_argument('state', choices=INITIAL_OPTIONS,
                         help='the first state or stimulus to align to')
     parser.add_argument('--lead', type=int, default=0,
                         help='how many epochs before the state/stimulus '

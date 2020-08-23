@@ -1,7 +1,6 @@
 """
 Utilities for creating plots from experimental data.
 """
-import sys
 from argparse import ArgumentParser
 from operator import itemgetter
 from pathlib import Path
@@ -10,7 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import AutoMinorLocator
 
-from ..common import SLEEP_STATE
+from ..common import (INITIAL_OPTIONS, SLEEP_STATE,
+                      SleepStateNotRecognisedError, STIMULI)
 from ..experiment import Experiment
 from ..load_file import load_file
 
@@ -30,18 +30,25 @@ patterns = ['/', '+', 'x', '.']
 def plot_hypnogram(exp, initial_state, find_jump, lead_in, output_file=None):
     """Plot a hypnogram corresponding to the given experiment.
 
-    First shifts the data so that the first state to be plotted is the given
-    initial_state. Any data before that state is first encountered will be
-    ignored.
+    First shifts the data so that the first epoch to be plotted has the given
+    initial_state. Any data before that state or stimulus is first encountered
+    will be ignored.
 
     If find_jump is True, this function will also ignore any data until a
-    transition to the named state is encountered. Otherwise, it will use the
-    first occurrence of that state, even if it is the very first state in the
-    series.
+    transition to the named state/stimulus is encountered. Otherwise, it will
+    use the first occurrence of that state/stimulus, even if it is the very
+    first epoch in the series.
     """
-    exp.start_at_state(initial_state,
-                       observed_start=find_jump,
-                       look_ahead=lead_in)
+    # Decide whether we're aligning to a state or a stimulus
+    if initial_state in SLEEP_STATE.categories:
+        alignment_method = exp.start_at_state
+    elif initial_state in STIMULI:
+        alignment_method = exp.start_at_stimulus
+    else:
+        raise SleepStateNotRecognisedError
+    alignment_method(initial_state,
+                     observed_start=find_jump,
+                     look_ahead=lead_in)
     data = exp.get_full_data_since_onset()
     # Consider the first epoch of the alignment as time 0
     times = data.index - data.index[0]
@@ -84,13 +91,13 @@ def entry_point():
         description="Create a hypnogram from a patient's sleep data")
     parser.add_argument("input", help="The data file (.xlsx) to plot")
     parser.add_argument("state",
-                        choices=SLEEP_STATE.categories,
+                        choices=INITIAL_OPTIONS,
                         default="Awake",
                         nargs='?',
-                        help="The initial sleep state to align to "
+                        help="The initial sleep state or stimulus to align to "
                              "(default: Awake)")
     parser.add_argument('--first-occurrence', action='store_true',
-                        help='use the first occurrence of the state, '
+                        help='use the first occurrence of the state/stimulus, '
                              'rather than the first transition to it')
     parser.add_argument('--lead-in', type=int, default=0,
                         help='start alignments this many epochs before '

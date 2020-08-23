@@ -10,6 +10,10 @@ SLEEP_STATE = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
 STIMULI = ['Painful_stimulation', 'Somatosensory_stimulation', 'Held']
 
 
+# The list of all things we can align to (sleep states and stimuli)
+INITIAL_OPTIONS = list(SLEEP_STATE.categories) + STIMULI
+
+
 # Errors
 class SleepStateNotRecognisedError(ValueError):
     """An exception to raise when an unrecognised sleep state is specified."""
