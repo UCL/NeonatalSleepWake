@@ -1,0 +1,67 @@
+sample_experiment:
+  raw: tests/data/sample_experiment.xlsx
+  data: tests/data/sample_experiment.csv
+  alignments:
+    REM_jump:
+      - start_epoch: 2
+        stop_epoch: 5
+        states:
+          - REM
+          - nREM
+          - nREM
+          - Trans
+      - start_epoch: 6
+        stop_epoch: 7
+        states:
+          - REM
+          - Awake
+  meta:
+    Baby_reference: '12345'
+    Corrected_gestational_age_weeks: 23.45
+    High_risk_yes_no: false
+    Neonatal_unit_yes_no: true
+    Postnatal_age_days: 14
+    Start_time: '01:23'
+
+no_nrem_experiment:
+  # a real experiment (278601) with no nREM observations
+  raw: tests/data/no_nrem_experiment.xlsx
+
+awake_nrem_experiment:
+  # an experiment with one run of Awake, and one epoch of nREM
+  data: tests/data/awake_nrem_experiment.csv
+
+stimulus_experiment:
+  data: tests/data/stimulus_experiment.csv
+  alignments:
+    Painful_stimulation_jump:
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - nREM
+          - REM
+          - Awake
+    Painful_stimulation_first:
+      - start_epoch: 0
+        stop_epoch: 1
+        states:
+          - Awake
+          - Awake
+      - start_epoch: 2
+        stop_epoch: 4
+        states:
+          - REM
+          - nREM
+          - nREM
+      - start_epoch: 5
+        stop_epoch: 7
+        states:
+          - nREM
+          - REM
+          - Awake

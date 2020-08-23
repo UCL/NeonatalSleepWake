@@ -1,7 +1,10 @@
+import os
 import warnings
 
 import pandas as pd
 import xlrd
+
+from .common import SLEEP_STATE
 
 # TODO Put this in a config file for easier editing by anyone
 # The data recorded at each epoch
@@ -33,8 +36,7 @@ def convert_data_types(data):
     a categorical type with its fixed set of values."""
     new_data = pd.DataFrame(index=data.index)
     # Convert first column (sleep state) to a category with four values
-    cat_type = pd.CategoricalDtype(["REM", "nREM", "Awake", "Trans"])
-    new_data[data.columns[0]] = data.iloc[:, 0].astype(cat_type)
+    new_data[data.columns[0]] = data.iloc[:, 0].astype(SLEEP_STATE)
     # Convert yes/no to True/False. In principle this could be done with the
     # true_values/false_values argument to read_excel, but it doesn't seem to
     # work here (possibly because Pandas does that conversion column-wise, and
@@ -46,9 +48,41 @@ def convert_data_types(data):
     return new_data
 
 
+def convert_metadata(raw_metadata, datemode):
+    """Convert the metadata to appropriate types."""
+    metadata = {}
+    # Create a time object from the time: the time is loaded as a fraction
+    # of a day, but xlrd has convenience methods for interpreting it
+    try:
+        metadata["Start_time"] = xlrd.xldate_as_datetime(
+            raw_metadata["Start_time"].value, datemode).time()
+    except TypeError:  # some times may be missing
+        metadata["Start_time"] = None
+    # Store the baby reference as a string. Note that xlrd reads integers as
+    # floats, so we need some conversion to stay close to the original format.
+    # Also, some patients have two references in the form X/Y; in those cases,
+    # the value will have been read as text already.
+    original_value = raw_metadata["Baby_reference"].value
+    try:
+        reference = int(original_value)
+    except ValueError:
+        reference = original_value
+    metadata["Baby_reference"] = str(reference)
+    # Convert boolean attributes (assume everything non-"yes" is False)
+    for field in ["Neonatal_unit_yes_no", "High_risk_yes_no"]:
+        metadata[field] = raw_metadata[field].value == "yes"
+    # Convert number of days/weeks to plain numbers
+    metadata["Postnatal_age_days"] = int(
+        raw_metadata["Postnatal_age_days"].value)
+    metadata["Corrected_gestational_age_weeks"] = float(
+        raw_metadata["Corrected_gestational_age_weeks"].value)
+    return metadata
+
+
 def load_file(path):
     """Load the data from the specified Excel workbook."""
     # TODO Can this be done with a context manager?
+    print("Loading file", os.path.basename(path))
     book = xlrd.open_workbook(path, ragged_rows=True)
     # Assume there is only one sheet - warn if not!
     if book.nsheets > 1:
@@ -63,8 +97,11 @@ def load_file(path):
     df.columns.name = df.index.name
     df.index.name = None
     data = df.T
+    data.index = pd.RangeIndex(start=1, stop=n_epochs + 1)
     # Convert the values into something more standard than strings
     data = convert_data_types(data)
     # Read metadata from the second row
-    metadata = dict(zip(METADATA_COLUMNS, sheet.row(1)[n_epochs+1:]))
+    metadata = convert_metadata(
+        dict(zip(METADATA_COLUMNS, sheet.row(1)[n_epochs+1:])),
+        book.datemode)
     return data, metadata
