@@ -1,10 +1,16 @@
-function fig = plot_duration(filename, types_in)
+function fig = plot_duration(filename, types_in, optional_frequency)
 
 % Plot burst durations by type of burst with latency on the x-axis
 % Arguments
 % filename : name of csv file with burst data
-% types : cell array of type names
+% types_in : cell array of type names
+% optional_frequency : [optional] frequency of data sampling (default 250Hz)
 
+if(nargin > 2)
+    frequency = optional_frequency;
+else
+    frequency = 250.0;
+end
 
 if iscell(types_in)
     types = types_in;    
@@ -24,13 +30,14 @@ hold on
 
 for i = 1:numel(types)
     burst_type = types{i};
+    assert(ischar(burst_type) || isstring(burst_type))
     burst_id = logical(count(data.type,burst_type));
     data_slice = data(burst_id,:);
-    stem(data_slice.latency, data_slice.duration)
+    stem(data_slice.latency / frequency, data_slice.duration / frequency)
 end
 
 legend(types)
-xlabel('latency (?)')
+xlabel('latency (s)')
 ylabel('Duration (s)')
 box on
 grid on
