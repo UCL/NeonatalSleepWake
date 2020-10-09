@@ -1,13 +1,7 @@
-function events = process_bursts(set_filename, channel)
+function events = process_bursts(eeg_data, channel)
     
 if (exist('pop_loadset','file') == 0)
     eeglab nogui
-end
-
-if(strcmp(set_filename,'test'))
-    eeg_data = test_data(100);
-else
-    eeg_data = pop_loadset(set_filename);
 end
 
 events_by_channel = get_events_by_channel(eeg_data);

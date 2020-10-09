@@ -1,4 +1,4 @@
-function fig = plot_events(filename, field, channels_in)
+function fig = plot_events(eeg_data, field, channels_in)
 % function fig = plot_events(filename, field, channels_in)
 %
 % Plot burst durations by type of burst with latency on the x-axis
@@ -22,14 +22,12 @@ else
     error('Types must be a string or a cell array');
 end
 
-assert(ischar(filename) || isstring(filename), 'Filename must be a string')
-
 fig = figure();
 clf;
 hold on
 
 for i = 1:numel(channels)
-    events = process_bursts(filename, channels{i});
+    events = process_bursts(eeg_data, channels{i});
     assert(any(strcmp(field,fieldnames(events))), ['Field ',field,' not found in event data'])
     stem(events.latency, events.(field))
 end
