@@ -11,13 +11,13 @@ for i = 1:numel(eeg_data.chanlocs)
     burst_type = [channel,'_burst'];
     burst_id = logical(count(type,burst_type));
     
-    burst_latency = latency(burst_id) / (eeg_data.srate * 1e-3);
-    burst_duration = duration(burst_id) / (eeg_data.srate * 1e-3);
+    burst_latency = latency(burst_id) / eeg_data.srate;
+    burst_duration = duration(burst_id) / eeg_data.srate;
     
     events.(channel) = struct(...
         'n',sum(burst_id),...
-        'latency',burst_latency,'unit_latency','ms',...
-        'duration',burst_duration,'unit_duration','ms');
+        'latency',burst_latency,'unit_latency','s',...
+        'duration',burst_duration,'unit_duration','s');
 end
 
 end
