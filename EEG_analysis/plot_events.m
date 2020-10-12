@@ -1,5 +1,5 @@
 function fig = plot_events(eeg_data, field, channels_in)
-% function fig = plot_events(filename, field, channels_in)
+% function fig = plot_events(eeg_data, field, channels_in)
 %
 % Plot burst durations by type of burst with latency on the x-axis
 % Arguments
@@ -27,7 +27,7 @@ clf;
 hold on
 
 for i = 1:numel(channels)
-    events = process_bursts(eeg_data, channels{i});
+    events = process_bursts(eeg_data, channels{i}, strfind(field,'power'));
     assert(any(strcmp(field,fieldnames(events))), ['Field ',field,' not found in event data'])
     stem(events.latency, events.(field))
 end
