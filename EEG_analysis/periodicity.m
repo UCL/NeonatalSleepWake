@@ -21,7 +21,7 @@ y_uniform = interp1(t,y_ma,t_uniform,'linear');
 
 figure()
 subplot(2,1,1)
-plot(t/3600,y,'b-',t_uniform/3600,y_uniform,'r--')
+plot(hours(seconds(t)),y,'b-',hours(seconds(t_uniform)),y_uniform,'r--')
 xlabel('Time (hrs)')
 ylabel('Time between events (s)')
 
@@ -41,7 +41,6 @@ xlabel('f (mHz)')
 ylabel('Amplitude')
 
 figure()
-subplot(3,1,3)
 cwt(y_uniform, Fs)
 
 end
