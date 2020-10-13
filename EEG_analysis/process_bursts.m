@@ -39,7 +39,7 @@ for ic = 1:numel(channels)
     
     channel_list = extractfield(eeg_data.chanlocs,'labels');
     channel_id = find(count(channel_list,channel));
-    voltage_series = eeg_data.data(channel_id,:) * 1e-6; %#ok<*FNDSB> In Volts
+    voltage_series = eeg_data.data(channel_id,:); %#ok<*FNDSB> In microVolts
     power_series = voltage_series.^2;
     time_series = eeg_data.times * 1e-3; % In seconds
     
@@ -53,10 +53,10 @@ for ic = 1:numel(channels)
             waitbar(i/events.(channel).n, wb, ['Processing events for channel ',channel])
         end
     end
-    events.(channel).unit_power = 'V^2';
+    events.(channel).unit_power = '\muV^2';
     
     events.(channel).power_n = events.(channel).power ./ events.(channel).duration;
-    events.(channel).unit_power_n = 'V^2s^{-1}';
+    events.(channel).unit_power_n = '\muV^2s^{-1}';
     
     if wb_exists
         close(wb)
