@@ -1,9 +1,13 @@
 % Read in data
-%csv_filename = 'BRUK12.csv';
-%set_filename = 'data/BRUK19_day4to5_01.37.43_01.37.43_noECG.set';
-set_filename = 'data_small/BRUK12_day4_07.27.43_08.35.43.set';
+set_filename = uigetfile('*.set','Select a .set file');
+if set_filename == 0
+    error('No .set file selected')
+end
 eeg_data = pop_loadset(set_filename);
-channels = {'O2','C4'};
+%%
+channels = extractfield(eeg_data.chanlocs, 'labels');
+[index,tf] = listdlg('ListString',channels,'Name','Select channel(s)');
+channels = channels(index);
 %%
 test_process_bursts
 events = process_bursts(eeg_data,channels);
