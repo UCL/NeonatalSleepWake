@@ -1,11 +1,27 @@
-function periodicity(events, channel, smooth)
+function periodicity(events, channel, field, smooth)
 
-if nargin < 3
+if nargin < 4
     smooth = true;
 end
 
 t = events.(channel).latency;
-y = gradient(events.(channel).latency);
+
+switch field
+    case 'latency'
+        y = gradient(events.(channel).latency);
+        yl = 'Time between events (s)';
+    case 'duration'
+        y = events.(channel).duration;
+        yl = 'Event duration (s)';
+    case 'power'
+        y = events.(channel).power;
+        yl = 'Power (\muV^2)';
+    case 'power_n'
+        y = events.(channel).power_n;
+        yl = 'Normalized power (\muV^2s^{-1})';
+    case default
+        error(['Field ',field,' not recognized'])
+end
 
 if smooth
     ma_width = round(numel(t)/100);
@@ -23,7 +39,7 @@ figure()
 subplot(2,1,1)
 plot(hours(seconds(t)),y,'b-',hours(seconds(t_uniform)),y_uniform,'r--')
 xlabel('Time (hrs)')
-ylabel('Time between events (s)')
+ylabel(yl)
 
 Fs = numel(t)/t_uniform(end);
 
