@@ -7,10 +7,6 @@ if nargin < 3
 else
     events = events_in;    
 end
-    
-if nargin < 4
-    get_power = true;
-end
 
 if iscell(channels_in)
     channels = channels_in;    
@@ -30,7 +26,7 @@ for ic = 1:numel(channels)
     
     if events.(channel).n > lots_of_events
         warning(['computing the power in ',num2str(events.(channel).n),...
-            ' events.(channel). This may take a while.'])
+            ' events. This may take a while.'])
         wb = waitbar(0, ['Processing events for channel ',channel]);
         wb_exists = true;
     else
@@ -44,11 +40,15 @@ for ic = 1:numel(channels)
     time_series = eeg_data.times * 1e-3; % In seconds
     
     events.(channel).power = zeros(1,events.(channel).n);
-        
+    
     for i = 1:events.(channel).n
-        idx = time_series >= events.(channel).latency(i) & ...
-            time_series <= events.(channel).latency(i) + events.(channel).duration(i);
-        events.(channel).power(i) = trapz(time_series(idx), power_series(idx));
+        try
+            i1 = int64(events.(channel).latency(i) * eeg_data.srate);
+            i2 = int64((events.(channel).latency(i) + events.(channel).duration(i)) * eeg_data.srate);
+            events.(channel).power(i) = trapz(time_series(i1:i2), power_series(i1:i2));
+        catch
+            keyboard
+        end
         if wb_exists
             waitbar(i/events.(channel).n, wb, ['Processing events for channel ',channel])
         end
