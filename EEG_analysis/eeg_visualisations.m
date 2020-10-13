@@ -1,9 +1,9 @@
 % Read in data
-[set_filename, pathname] = uigetfile('*.set','Select a .set file');
-if set_filename == 0
+eeg_data = pop_loadset();
+if isempty(eeg_data)
     error('No .set file selected')
 end
-eeg_data = pop_loadset([pathname,set_filename]);
+% [] Run this script in a loop over multiple files
 %%
 % Channel selection GUI
 channels = extractfield(eeg_data.chanlocs, 'labels');
