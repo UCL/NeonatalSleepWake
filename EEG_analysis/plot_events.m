@@ -32,13 +32,25 @@ for i = 1:numel(channels)
     assert(any(strcmp(field,fieldnames(events.(channel)))), ...
         ['Field ',field,' not found in event data'])
     t = seconds(events.(channel).latency);
-    stem(t, events.(channel).(field))
+    stem(hours(t), events.(channel).(field))
 end
 
 legend(channels)
-xlabel('latency')
+xlabel('Time (hours)')
 ylabel([field,' [',events.(channel).(['unit_',field]),']'])
 box on
 grid on
+
+%xlim([0,20])
+switch field
+    case 'duration'
+        %add configs here
+    case 'power'
+        set(gca, 'YScale','log')
+        ylim([0, 400])
+    case 'power_n'
+        ylim([0, 100])
+        set(gca, 'YScale','log')
+end
 
 end
