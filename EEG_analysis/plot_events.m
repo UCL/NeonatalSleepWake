@@ -41,7 +41,7 @@ ylabel([field,' [',events.(channel).(['unit_',field]),']'])
 box on
 grid on
 
-%xlim([0,20])
+xlim([0,24])
 switch field
     case 'duration'
         %add configs here
