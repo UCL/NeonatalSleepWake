@@ -1,3 +1,5 @@
+%% Run tests
+runtests('test_process_bursts.m');
 %% Set initial values
 field_index = 1;
 channel_index = 1;
@@ -18,10 +20,10 @@ while execute_loop
     %% Process the data for plotting. 
     % Do it only once and only for the requested channels to avoid
     % unnecessary work
-    test_process_bursts % Test power integration is correct
     events = process_bursts(eeg_data,channels);
     %% Plot the events by duration as function of time
     plot_events(events,'duration',channels);
+    co = get(gca,'colororder');
     %% Plot the events by power as function of time
     plot_events(events,'power',channels);
     %% Plot the events by power normalised by the duration as a function of time
@@ -40,7 +42,6 @@ while execute_loop
     end
     %% Plot frequency analysis for selected field&channels
     if ~isempty(field)
-        co = get(gca,'colororder');
         for i = 1:numel(channels)
             periodicity(events,channels{i},field,true,co(i,:));
         end
