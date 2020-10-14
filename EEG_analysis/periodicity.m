@@ -49,7 +49,7 @@ plot(hours(seconds(t)),y,'Color',color)
 plot(hours(seconds(t_uniform)),y_uniform,'r--')
 xlabel('Time (hrs)')
 ylabel(yl)
-title(channel)
+title(['Signal for channel ', channel])
 
 Fs = numel(t)/t_uniform(end);
 
@@ -63,10 +63,12 @@ f = Fs*(0:(L/2))/L * 3600;
 
 subplot(2,1,2)
 semilogx(f,P1,'o-','Color',color);
-xlabel('f (1/hr)')
+xlabel('Frequency (1/hr)')
 ylabel('Amplitude')
+title(['Fourier spectrum for channel ', channel])
 
 figure()
-cwt(y_uniform, Fs)
+cwt(y_uniform, hours(1/Fs/3600))
+title([get(gca,'title').String, ' for channel ',channel])
 
 end

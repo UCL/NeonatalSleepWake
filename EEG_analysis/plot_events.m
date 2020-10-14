@@ -39,15 +39,6 @@ box on
 grid on
 
 xlim([0,24])
-switch field
-    case 'duration'
-        %add configs here
-    case 'power'
-        set(gca, 'YScale','log')
-        ylim([0, 400])
-    case 'power_n'
-        ylim([0, 100])
-        set(gca, 'YScale','log')
-end
+set(gca,'xtick',0:24)
 
 end
