@@ -40,8 +40,9 @@ while execute_loop
     end
     %% Plot frequency analysis for selected field&channels
     if ~isempty(field)
+        co = get(gca,'colororder');
         for i = 1:numel(channels)
-            periodicity(events,channels{i},field,true);
+            periodicity(events,channels{i},field,true,co(i,:));
         end
     end
     %% GUI to exit the loop

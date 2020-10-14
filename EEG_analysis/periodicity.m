@@ -1,7 +1,14 @@
-function periodicity(events, channel, field, smooth)
+function periodicity(events, channel, field, smooth, color)
+% function periodicity(events, channel, field, smooth, color)
+%
+% Perform and plot frequency analysis for events in a selected channel.
 
 if nargin < 4
     smooth = true;
+end
+
+if nargin < 5
+    color = [0 0 1];
 end
 
 t = events.(channel).latency;
@@ -37,7 +44,9 @@ y_uniform = interp1(t,y_ma,t_uniform,'linear');
 
 figure()
 subplot(2,1,1)
-plot(hours(seconds(t)),y,'b-',hours(seconds(t_uniform)),y_uniform,'r--')
+hold on
+plot(hours(seconds(t)),y,'Color',color)
+plot(hours(seconds(t_uniform)),y_uniform,'r--')
 xlabel('Time (hrs)')
 ylabel(yl)
 title(channel)
@@ -53,7 +62,7 @@ P1(2:end-1) = 2*P1(2:end-1);
 f = Fs*(0:(L/2))/L * 3600;
 
 subplot(2,1,2)
-semilogx(f,P1,'o-');
+semilogx(f,P1,'o-','Color',color);
 xlabel('f (1/hr)')
 ylabel('Amplitude')
 
