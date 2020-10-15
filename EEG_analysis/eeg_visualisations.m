@@ -57,7 +57,9 @@ while execute_loop
     end
     %% Write output data
     eeg_periodicity_data(num_files).setname = eeg_data.setname;
-    eeg_periodicity_data(num_files).n = numel(channels);
+    eeg_periodicity_data(num_files).nchn = numel(channels);
+    eeg_periodicity_data(num_files).npoints = eeg_data.pnts;
+    eeg_periodicity_data(num_files).deleted_fraction = get_deleted_fcation(eeg_data);
     eeg_periodicity_data(num_files).channels = channels;
     eeg_periodicity_data(num_files).period = hours(period);
     eeg_periodicity_data(num_files).amplitude = amplitude;
