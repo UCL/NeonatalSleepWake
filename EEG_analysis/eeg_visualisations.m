@@ -4,6 +4,8 @@ runtests('test_process_bursts.m');
 field_index = 1;
 channel_index = 1;
 execute_loop = true;
+eeg_periodicity_data = struct();
+num_files = 0;
 %% Loop over multiple files
 while execute_loop
     %% Read in data
@@ -11,6 +13,7 @@ while execute_loop
     if isempty(eeg_data)
         error('No .set file selected')
     end
+    num_files = num_files + 1;
     %% Channel selection GUI
     channels = extractfield(eeg_data.chanlocs, 'labels');
     [channel_index,~] = listdlg('ListString',channels,...
@@ -44,11 +47,20 @@ while execute_loop
         field = fields{field_index};
     end
     %% Plot frequency analysis for selected field&channels
+    n = numel(channels);
+    period = zeros(n,1);
+    amplitude = zeros(n,1);
     if ~isempty(field)
-        for i = 1:numel(channels)
-            periodicity(events,channels{i},field,true,co(i,:));
+        for i = 1:n
+            [period(i),amplitude(i)] = periodicity(events,channels{i},field,true,co(i,:));
         end
     end
+    %% Write output data
+    eeg_periodicity_data(num_files).setname = eeg_data.setname;
+    eeg_periodicity_data(num_files).n = numel(channels);
+    eeg_periodicity_data(num_files).channels = channels;
+    eeg_periodicity_data(num_files).period = hours(period);
+    eeg_periodicity_data(num_files).amplitude = amplitude;
     %% GUI to exit the loop
     % Exit unless the user clicks on 'Yes'
     answer = questdlg('read another file?');
@@ -58,5 +70,9 @@ while execute_loop
         otherwise
             execute_loop = false;
     end
-    %%
+end
+%% Save output data
+[file,path] = uiputfile('*.mat','Select output file','eeg_periodicity.mat');
+if file ~= 0
+    save([path,file],'eeg_periodicity_data');
 end
