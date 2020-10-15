@@ -23,7 +23,10 @@ while execute_loop
     events = process_bursts(eeg_data,channels);
     %% Plot the events by duration as function of time
     plot_events(events,'duration',channels);
+    % Store color order for use in later plots. Replicate it so we
+    % don't run out of colors.
     co = get(gca,'colororder');
+    co = repmat(co, ceil(numel(channels)/size(co,1)), 1);
     %% Plot the events by power as function of time
     plot_events(events,'power',channels);
     %% Plot the events by power normalised by the duration as a function of time
