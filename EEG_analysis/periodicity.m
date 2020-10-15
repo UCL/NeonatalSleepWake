@@ -46,7 +46,7 @@ figure()
 subplot(2,1,1)
 hold on
 plot(hours(seconds(t)),y,'Color',color)
-plot(hours(seconds(t_uniform)),y_uniform,'r--')
+plot(hours(seconds(t_uniform)),y_uniform,'r--','linewidth',2)
 xlabel('Time (hrs)')
 ylabel(yl)
 title(['Signal for channel ', channel])
@@ -62,10 +62,11 @@ P1(2:end-1) = 2*P1(2:end-1);
 f = Fs*(0:(L/2))/L * 3600;
 
 subplot(2,1,2)
-semilogx(f,P1,'o-','Color',color);
-xlabel('Frequency (1/hr)')
+semilogx(1./f,P1,'o-','Color',color);
+xlabel('Period (hrs)')
 ylabel('Amplitude')
 title(['Fourier spectrum for channel ', channel])
+grid on
 
 figure()
 cwt(y_uniform, hours(1/Fs/3600))
