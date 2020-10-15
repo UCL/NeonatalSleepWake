@@ -24,12 +24,14 @@ fig = figure();
 clf;
 hold on
 
+ph = struct();
+
 for i = 1:numel(channels)
     channel = channels{i};
     assert(any(strcmp(field,fieldnames(events.(channel)))), ...
         ['Field ',field,' not found in event data'])
     t = seconds(events.(channel).latency);
-    stem(hours(t), events.(channel).(field))
+    ph.(channel) = stem(hours(t), events.(channel).(field));
 end
 
 legend(channels)
@@ -40,5 +42,18 @@ grid on
 
 xlim([0,24])
 set(gca,'xtick',0:24)
+
+% In general, the power of bursts at different regions is F<C<O<P. Change
+% plotting order so that the smaller bursts, e.g. F, are always plotted at
+% the front
+order = fliplr('FCOP');
+for i = 1:numel(order)
+    channel_prefix = order(i);
+    channel_ids = find(contains(channels,channel_prefix));
+    for j = 1:numel(channel_ids)
+        channel_id = channel_ids(j);
+        uistack(ph.(channels{channel_id}), 'top')
+    end
+end
 
 end
