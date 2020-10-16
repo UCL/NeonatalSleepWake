@@ -1,7 +1,8 @@
 %% Read excel table
 [filename,pathname] = uigetfile('*.xls*');
-T = readtable([pathname,filename], 'PreserveVariableNames', false);
+T = readtable([pathname,filename]);
 t = T(:,{'BRUK','Shankaran_num','Cog','Lang_interp','Motor_interpolated'});
+% [ ] change t to something more descriptive
 t_data = t{:,:};
 %% Read data from eeg_visualisations
 uiopen('load');
