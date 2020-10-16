@@ -75,7 +75,9 @@ cwt(y_uniform, hours(1/Fs/3600))
 title([get(gca,'title').String, ' for channel ',channel])
 
 % Find the period with the highest amplitude. Ignore the lowest
-% frequency in  the spectrum (f == 0.)
+% frequency in  the spectrum (f == 0.). Could improve this?
+% - Add a frequency window to look in
+% - Look for peaks only
 [amplitude, imax] = max(P1(2:end));
 period = 1./f(imax+1);
 

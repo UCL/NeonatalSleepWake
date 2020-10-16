@@ -57,6 +57,9 @@ while execute_loop
     end
     %% Write output data
     eeg_periodicity_data(num_files).setname = eeg_data.setname;
+    i1 = strfind(eeg_periodicity_data(num_files).setname,'BRUK');
+    i2 = strfind(eeg_periodicity_data(num_files).setname,'_day');
+    eeg_periodicity_data(num_files).BRUK = str2double(eeg_periodicity_data(num_files).setname(i1+4:i2-1));
     eeg_periodicity_data(num_files).nchannels = numel(channels);
     eeg_periodicity_data(num_files).npoints = eeg_data.pnts;
     eeg_periodicity_data(num_files).deleted_fraction = get_deleted_fraction(eeg_data);
