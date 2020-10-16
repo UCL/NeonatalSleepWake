@@ -57,12 +57,14 @@ while execute_loop
     end
     %% Write output data
     eeg_periodicity_data(num_files).setname = eeg_data.setname;
-    eeg_periodicity_data(num_files).nchn = numel(channels);
+    eeg_periodicity_data(num_files).nchannels = numel(channels);
     eeg_periodicity_data(num_files).npoints = eeg_data.pnts;
-    eeg_periodicity_data(num_files).deleted_fraction = get_deleted_fcation(eeg_data);
+    eeg_periodicity_data(num_files).deleted_fraction = get_deleted_fraction(eeg_data);
     eeg_periodicity_data(num_files).channels = channels;
     eeg_periodicity_data(num_files).period = hours(period);
     eeg_periodicity_data(num_files).amplitude = amplitude;
+    [eeg_periodicity_data(num_files).corrcoef_r, ...
+        eeg_periodicity_data(num_files).corrcoef_p] = get_corr_coefs(events, channels);
     %% GUI to exit the loop
     % Exit unless the user clicks on 'Yes'
     answer = questdlg('read another file?');
