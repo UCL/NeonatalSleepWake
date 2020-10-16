@@ -79,7 +79,7 @@ while execute_loop
     end
 end
 %% Save output data
-[file,path] = uiputfile('*.mat','Select output file','eeg_periodicity.mat');
-if file ~= 0
-    save([path,file],'eeg_periodicity_data');
+[filename,pathname] = uiputfile('*.mat','Select output file','eeg_periodicity.mat');
+if filename ~= 0
+    save([pathname,filename],'eeg_periodicity_data');
 end
