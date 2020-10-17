@@ -13,6 +13,13 @@ end
 
 t = events.(channel).latency;
 
+if numel(t) < 3
+    warning('Periodicity analysis requires (way) more than 2 data points, aborting.')
+    period = NaN;
+    amplitude = NaN;
+    return
+end
+
 switch field
     case 'latency'
         y = gradient(events.(channel).latency);
@@ -31,7 +38,7 @@ switch field
 end
 
 if smooth
-    ma_width = round(numel(t)/100);
+    ma_width = ceil(numel(t)/100);
     y_ma = movmean(y,ma_width);
 else
     y_ma = y;
@@ -40,6 +47,7 @@ end
 L = numel(t);
 
 t_uniform = linspace(t(1),t(end),L);
+% [ ] handle multiple events with the same latency
 y_uniform = interp1(t,y_ma,t_uniform,'linear');
 
 figure()
