@@ -18,8 +18,8 @@ for i = 1:n
         rc(i) = r(1,2);
         pc(i) = p(1,2);
     else
-        warning(['could not calculate correlation between sparsity and power for channel',...
-            channel,'because of too few events'])
+        warning(['could not calculate correlation between sparsity and power for channel ',...
+            channel,' because of too few events'])
         rc(i) = NaN;
         pc(i) = NaN;
     end
