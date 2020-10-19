@@ -1,4 +1,4 @@
-function [period,amplitude] = periodicity(events, channel, field, smooth, color)
+function [period,amplitude] = periodicity(events, channel, field, smooth, color, do_plot)
 % function periodicity(events, channel, field, smooth, color)
 %
 % Perform and plot frequency analysis for events in a selected channel.
@@ -9,6 +9,10 @@ end
 
 if nargin < 5
     color = [0 0 1];
+end
+
+if nargin < 6
+    do_plot = true;
 end
 
 t = events.(channel).latency;
@@ -48,17 +52,7 @@ end
 L = numel(t);
 
 t_uniform = linspace(t(1),t(end),L);
-% [ ] handle multiple events with the same latency
 y_uniform = interp1(t,y_ma,t_uniform,'linear');
-
-figure()
-subplot(2,1,1)
-hold on
-plot(hours(seconds(t)),y,'Color',color)
-plot(hours(seconds(t_uniform)),y_uniform,'r--','linewidth',2)
-xlabel('Time (hrs)')
-ylabel(yl)
-title(['Signal for channel ', channel])
 
 % Approximate frequency of events
 Fs = numel(t)/t_uniform(end);
@@ -71,23 +65,34 @@ P1(2:end-1) = 2*P1(2:end-1);
 
 f = Fs*(0:(L/2))/L * 3600;
 
-subplot(2,1,2)
-semilogx(1./f,P1,'o-','Color',color);
-xlabel('Period (hrs)')
-ylabel('Amplitude')
-title(['Fourier spectrum for channel ', channel])
-grid on
-
-% Continuous wavelet analysis. Just use what comes out of the box.
-figure()
-cwt(y_uniform, hours(1/Fs/3600))
-title([get(gca,'title').String, ' for channel ',channel])
-
 % Find the period with the highest amplitude. Ignore the lowest
 % frequency in  the spectrum (f == 0.). Could improve this?
 % - Add a frequency window to look in
 % - Look for peaks only
 [amplitude, imax] = max(P1(2:end));
 period = 1./f(imax+1);
+
+if do_plot
+    figure()
+    subplot(2,1,1)
+    hold on
+    plot(hours(seconds(t)),y,'Color',color)
+    plot(hours(seconds(t_uniform)),y_uniform,'r--','linewidth',2)
+    xlabel('Time (hrs)')
+    ylabel(yl)
+    title(['Signal for channel ', channel])
+    
+    subplot(2,1,2)
+    semilogx(1./f,P1,'o-','Color',color);
+    xlabel('Period (hrs)')
+    ylabel('Amplitude')
+    title(['Fourier spectrum for channel ', channel])
+    grid on
+    
+    % Continuous wavelet analysis. Just use what comes out of the box.
+    figure()
+    cwt(y_uniform, hours(1/Fs/3600))
+    title([get(gca,'title').String, ' for channel ',channel])
+end
 
 end
