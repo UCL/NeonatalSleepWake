@@ -25,6 +25,8 @@ else
     events = events_in;    
 end
 
+events = remove_duplicate_events(events);
+
 channels = format_channels(channels_in);
 
 for ic = 1:numel(channels)
