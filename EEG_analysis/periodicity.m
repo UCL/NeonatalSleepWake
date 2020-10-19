@@ -14,7 +14,8 @@ end
 t = events.(channel).latency;
 
 if numel(t) < 3
-    warning('Periodicity analysis requires (way) more than 2 data points, aborting.')
+    warning(['Could not do periodicity analysis on channel ',...
+        channel, ' because of  too few events'])
     period = NaN;
     amplitude = NaN;
     return
@@ -65,7 +66,7 @@ Fs = numel(t)/t_uniform(end);
 % Do fft over the signal. Code is from 'doc fft'.
 fty = fft(y_uniform);
 P2 = abs(fty/L);
-P1 = P2(1:L/2+1);
+P1 = P2(1:floor(L/2)+1);
 P1(2:end-1) = 2*P1(2:end-1);
 
 f = Fs*(0:(L/2))/L * 3600;
