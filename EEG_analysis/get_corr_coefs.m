@@ -12,7 +12,7 @@ for i = 1:n
     channel = channels{i};
     if events.(channel).n > 3
         [r,p] = corrcoef(gradient(events.(channel).latency), ...
-            events.(channel).power);
+            events.(channel).power_n);
         assert(issymmetric(r), 'r matrix should be symmetric for two signals')
         assert(issymmetric(p), 'p matrix should be symmetric for two signals')
         rc(i) = r(1,2);
