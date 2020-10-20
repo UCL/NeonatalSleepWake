@@ -1,27 +1,46 @@
-function [period,amplitude] = periodicity(events, channel, field, smooth, color, do_plot)
+function [peak_period,peak_amplitude] = periodicity(events, channel, field, varargin)
 % function periodicity(events, channel, field, smooth, color)
 %
-% Perform and plot frequency analysis for events in a selected channel.
+% Perform and plot frequency analysis for events in selected channel.
+% Returns the period and amplitude of the signal with the highest amplitude
+% found within a predefined period window. Currently set at 0.2 hrs to 5
+% hrs.
+% Inputs:
+%    - events: Struct with events by channel. Produced by process_bursts.m or
+%              get_events_by_channel.m
+%    - channel: name of channel
+%    - field: quantity to analyze/plot, supported options are
+%            - 'latency
+%            - 'duration'
+%            - 'power'
+%            - 'power_n'
+%  Optional:
+%    - window (default [0.2 5]): period range where to look for the peak
+%                                amplitude
+%    - smooth (default true): smooth data with a moving average before
+%      fourier transforming.
+%    - color (default [0 0 1]): Color for 1D plots
+%    - verbose (default true): switch to enable/disable plots
+% Outputs:
+%    - peak_period: period (hrs) of the signal with the highest amplitude
+%                   within the period window
+%    - peak_amplitude: amplitude of the signal with the highst amplitude
+%                      within the period window
 
-if nargin < 4
-    smooth = true;
-end
-
-if nargin < 5
-    color = [0 0 1];
-end
-
-if nargin < 6
-    do_plot = true;
-end
+params = inputParser;
+addOptional(params, 'window', [0.2 5.0], @(x) isnumeric(x) && numel(x) == 2);
+addOptional(params, 'smooth', true, @(x) islogical(x));
+addOptional(params, 'color', [0 0 1]);
+addOptional(params, 'verbose', true, @(x) islogical(x));
+parse(params, varargin{:});
 
 t = events.(channel).latency;
 
 if numel(t) < 3
     warning(['Could not do periodicity analysis on channel ',...
         channel, ' because of  too few events'])
-    period = NaN;
-    amplitude = NaN;
+    peak_period = NaN;
+    peak_amplitude = NaN;
     return
 end
 
@@ -42,7 +61,7 @@ switch field
         error(['Field ',field,' not recognized'])
 end
 
-if smooth
+if params.Results.smooth
     ma_width = ceil(numel(t)/100);
     y_ma = movmean(y,ma_width);
 else
@@ -65,25 +84,27 @@ P1(2:end-1) = 2*P1(2:end-1);
 
 f = Fs*(0:(L/2))/L * 3600;
 
-% Find the period with the highest amplitude. Ignore the lowest
-% frequency in  the spectrum (f == 0.). Could improve this?
-% - Add a frequency window to look in
-% - Look for peaks only
-[amplitude, imax] = max(P1(2:end));
-period = 1./f(imax+1);
+% Find the period with the highest amplitude within period_window. 
+period = 1./f;
+ip = period >= params.Results.window(1) & period <= params.Results.window(2);
+windowed_periods = period(ip);
 
-if do_plot
+[peak_amplitude, imax] = max(P1(ip));
+peak_period = windowed_periods(imax);
+
+if params.Results.verbose
+    % Plot fourier spectrum and continuous wavelet analysis
     figure()
     subplot(2,1,1)
     hold on
-    plot(hours(seconds(t)),y,'Color',color)
+    plot(hours(seconds(t)),y,'Color',params.Results.color)
     plot(hours(seconds(t_uniform)),y_uniform,'r--','linewidth',2)
     xlabel('Time (hrs)')
     ylabel(yl)
     title(['Signal for channel ', channel])
     
     subplot(2,1,2)
-    semilogx(1./f,P1,'o-','Color',color);
+    semilogx(1./f,P1,'o-','Color',params.Results.color);
     xlabel('Period (hrs)')
     ylabel('Amplitude')
     title(['Fourier spectrum for channel ', channel])
