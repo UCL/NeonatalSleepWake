@@ -15,6 +15,9 @@ end
 %% Get file names for I/O
 [in_file_names,in_path_name] = uigetfile('*.set','Select input files','multiselect','on');
 [out_file_name,out_path_name] = uiputfile('*.mat','Select output file','eeg_periodicity.mat');
+if ~iscell(in_file_names)
+    in_file_names = {in_file_names};
+end
 for ifile = 1:numel(in_file_names)
     %% Read file
     filename = in_file_names{ifile};
