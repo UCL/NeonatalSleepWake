@@ -52,7 +52,7 @@ while execute_loop
     amplitude = zeros(n,1);
     if ~isempty(field)
         for i = 1:n
-            [period(i),amplitude(i)] = periodicity(events,channels{i},field,true,co(i,:));
+            [period(i),amplitude(i)] = periodicity(events,channels{i},field,'color',co(i,:));
         end
     end
     %% Write output data
