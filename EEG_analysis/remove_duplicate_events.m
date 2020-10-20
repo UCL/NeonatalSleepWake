@@ -1,5 +1,14 @@
 function events = remove_duplicate_events(events)
-
+% function events = remove_duplicate_events(events)
+%
+% Remove duplicate (= events with identical latency) events from a data
+% set. Assumes only pairs of identical events are found. Removes the event
+% with the shorter duration.
+% Inputs:
+%    - events: Struct with events by channel. Produced by process_bursts.m or
+%          get_events_by_channel.m
+% Outputs:
+%    - events: Struct with events by channel with duplicates removed.
 channels = fieldnames(events);
 array_fields = {'latency','duration','power','power_n'};
 

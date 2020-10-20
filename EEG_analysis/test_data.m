@@ -1,4 +1,11 @@
 function data = test_data(N)
+% function data = test_data(N)
+%
+% Create an eeglab-like data structure for testing.
+% Inputs:
+%    - N: number of points in time series
+% Outputs
+%    - data: eeglab-like data structure
 
 data = struct();
 

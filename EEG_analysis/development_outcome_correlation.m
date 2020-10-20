@@ -1,3 +1,8 @@
+% This script compares baby development outcome data with the results of
+% EEG periodicity analysis performed by the eeg_visualizations.m or
+% eeg_batch.m scripts. The development outcome data is read in from an
+% MS excel file. The outputs are collected in a table that can be written
+% out as an MS excel file at the end of the script execution.
 %% Read excel table
 [filename,pathname] = uigetfile('*.xls*');
 full_table = readtable([pathname,filename], 'UseExcel', true);

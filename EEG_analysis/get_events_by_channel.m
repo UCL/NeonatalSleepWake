@@ -1,4 +1,11 @@
 function events = get_events_by_channel(eeg_data)
+% function events = get_events_by_channel(eeg_data)
+%
+% Separate events in an eeglab data set into structs by their channel
+% Inputs:
+%    - eeg_data: Data from eeglab .set file
+% Outputs:
+%    - events: Struct with events by channel.
 
 type = extractfield(eeg_data.event,'type');
 latency = extractfield(eeg_data.event,'latency');

@@ -1,3 +1,8 @@
+% This script processes EEG data from eeglab, performs periodicity analysis
+% on it and saves the results in a .mat file. To get started, run it and
+% follow the GUI windows that pop up to give inputs and/or options. NOTE:
+% You can select multiple input files at the beginning, but only if they
+% are in the same directory.
 %% Run tests
 runtests('test_process_bursts.m');
 %% Get initial values

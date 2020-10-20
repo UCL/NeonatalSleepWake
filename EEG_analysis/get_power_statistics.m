@@ -1,7 +1,17 @@
-function [mean_power, median_power] = get_power_statistics(events, channels)
+function [mean_power, median_power] = get_power_statistics(events, channels_in)
 % function [mean_power, median_power] = get_power_statistics(events, channels)
 %
 % Calculates mean and median of power for each channel
+% Inputs:
+%    - events: Struct with events by channel. Produced by process_bursts.m or
+%              get_events_by_channel.m
+%    - channels_in: string or cell array of channel names (usually found in
+%                   eeg_data.chanlocs.labels)
+% Outputs:
+%    - mean_power: Array of mean powers for each channel in channels_in
+%    - median_power: Array of median powers for each channel in channels_in
+
+channels = format_channels(channels_in);
 
 n = numel(channels);
 mean_power = zeros(n,1);
