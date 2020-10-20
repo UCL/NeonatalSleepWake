@@ -27,8 +27,9 @@ for ifile = 1:numel(in_file_names)
     n = numel(channels);
     period = zeros(n,1);
     amplitude = zeros(n,1);   
+    window = [0.2 5.0];
     for i = 1:n
-        [period(i),amplitude(i)] = periodicity(events,channels{i},field,true,[0,0,0],false);
+        [period(i),amplitude(i)] = periodicity(events,channels{i},field,'verbose',false);
     end
     
     %% Write output data
@@ -44,6 +45,9 @@ for ifile = 1:numel(in_file_names)
     eeg_periodicity_data(ifile).amplitude = amplitude;
     [eeg_periodicity_data(ifile).corrcoef_r, ...
         eeg_periodicity_data(ifile).corrcoef_p] = get_corr_coefs(events, channels);
+    [eeg_periodicity_data(ifile).mean_power,...
+        eeg_periodicity_data(ifile).median_power] = get_power_statistics(events, channels);
+
 end
 %% Write output in a file
 if out_file_name ~= 0
