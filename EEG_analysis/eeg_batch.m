@@ -53,7 +53,9 @@ for ifile = 1:numel(in_file_names)
     [eeg_periodicity_data(ifile).corrcoef_r, ...
         eeg_periodicity_data(ifile).corrcoef_p] = get_corr_coefs(events, channels);
     [eeg_periodicity_data(ifile).mean_power,...
-        eeg_periodicity_data(ifile).median_power] = get_power_statistics(events, channels);
+        eeg_periodicity_data(ifile).median_power] = ...
+        get_power_statistics(events, channels, 'normalised', true);
+    eeg_periodicity_data(ifile).power_statistics_type = 'normalised';
 
 end
 %% Write output in a file

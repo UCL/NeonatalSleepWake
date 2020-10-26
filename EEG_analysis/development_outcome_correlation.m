@@ -22,8 +22,8 @@ for i = 1:numel(unique_channels)
     outcome_table.([channel, '_amplitude']) = NaN(n,1);
     outcome_table.([channel, '_r_powerN_sparsity']) = NaN(n,1);
     outcome_table.([channel, '_p_powerN_sparsity']) = NaN(n,1);
-    outcome_table.([channel, '_mean_power']) = NaN(n,1);
-    outcome_table.([channel, '_median_power']) = NaN(n,1);
+    outcome_table.([channel, '_mean_powerN']) = NaN(n,1);
+    outcome_table.([channel, '_median_powerN']) = NaN(n,1);
 end
 
 for i = 1:numel(eeg_periodicity_data)
@@ -34,8 +34,8 @@ for i = 1:numel(eeg_periodicity_data)
         field_a = [channel,'_amplitude'];
         field_rcoeff = [channel,'_r_powerN_sparsity'];
         field_pcoeff = [channel,'_p_powerN_sparsity'];
-        field_pmean = [channel,'_mean_power'];
-        field_pmedian = [channel,'_median_power'];
+        field_pmean = [channel,'_mean_powerN'];
+        field_pmedian = [channel,'_median_powerN'];
         outcome_table.(field_p)(outcome_table.BRUK == data.BRUK) = hours(data.period(j));
         outcome_table.(field_a)(outcome_table.BRUK == data.BRUK) = data.amplitude(j);
         outcome_table.(field_rcoeff)(outcome_table.BRUK == data.BRUK) = data.corrcoef_r(j);
@@ -46,6 +46,7 @@ for i = 1:numel(eeg_periodicity_data)
     outcome_table.deleted_fraction(outcome_table.BRUK == data.BRUK) = data.deleted_fraction;
 end
 %% TODO: Get correlation coefficients
+% [ ] Ignore NaN's with corrcoef(X,Y,'rows','complete')
 
 %%
 [out_file_name,out_path_name] = uiputfile('*.xlsx','Select output file','outcome_table.xlsx');
