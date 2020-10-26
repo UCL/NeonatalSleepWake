@@ -25,6 +25,7 @@ clf;
 hold on
 
 ph = struct();
+has_data = false(numel(channels),1);
 
 for i = 1:numel(channels)
     channel = channels{i};
@@ -34,7 +35,7 @@ for i = 1:numel(channels)
     ph.(channel) = stem(hours(t), events.(channel).(field));
 end
 
-legend(channels)
+legend(channels(~structfun(@isempty, ph)))
 xlabel('Time (hours)')
 ylabel([field,' [',events.(channel).(['unit_',field]),']'])
 box on
