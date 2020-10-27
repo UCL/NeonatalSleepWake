@@ -20,7 +20,7 @@ For more information on each script and function, use the `help` function in MAT
 
 1. Run [eeg_visualisations.m](EEG_analysis/eeg_visualisations.m) or [eeg_batch.m](EEG_analysis/eeg_batch.m) to process data in [eeglab file(s)](https://liveuclac.sharepoint.com/:f:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/test_data?csf=1&web=1&e=NeHgjF). [eeg_visualisations.m](EEG_analysis/eeg_visualisations.m) will produce visualisations from each file while [eeg_batch.m](EEG_analysis/eeg_batch.m) will go through multiple files more quickly. When the script has finished, it will ask you to save the data to a `.mat` file.
 
-2. Run [development_outcome_correlation.m](EEG_analysis/development_outcome_correlation.m) to produce a table that combines the results from the previous step with outcome scores read in from an [MS Excel file](https://liveuclac.sharepoint.com/:x:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/BRUK_anonymised_num.xlsx?d=w937f7d45efe542d2ba6fa6156d8baee7&csf=1&web=1&e=7FDbLa). The output will be saved into another MS Excel file. 
+2. Run [development_outcome_correlation.m](EEG_analysis/development_outcome_correlation.m) to produce a table that combines the results from the previous step with outcome scores read in from an [MS Excel file](https://liveuclac.sharepoint.com/:x:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/BRUK_anonymised_num.xlsx?d=w937f7d45efe542d2ba6fa6156d8baee7&csf=1&web=1&e=7FDbLa). The output will be saved into another MS Excel file with a row for each child and a column for each channel/variable combination.
 
 
 #### Example files
@@ -45,6 +45,6 @@ This scripts loops over multiple files, processes events from all channels and p
 
 #### development_outcome_correlation.m
 
-This script combines the results saved by [eeg_batch.m](EEG_analysis/eeg_batch.m) with outcome scores read in from an [MS Excel file](https://liveuclac.sharepoint.com/:x:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/BRUK_anonymised_num.xlsx?d=w937f7d45efe542d2ba6fa6156d8baee7&csf=1&web=1&e=7FDbLa). The output will be saved into another MS Excel file. 
+This script combines the results saved by [eeg_batch.m](EEG_analysis/eeg_batch.m) with outcome scores read in from an [MS Excel file](https://liveuclac.sharepoint.com/:x:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/BRUK_anonymised_num.xlsx?d=w937f7d45efe542d2ba6fa6156d8baee7&csf=1&web=1&e=7FDbLa). The output will be saved into another MS Excel file with a row for each child and a column for each channel/variable combination.
 
 *TODO*: The correlation matrix is not yet computed automatically. It could be done with something like `corrcoef(X,Y,'rows','complete')`. For now it is left to the user to do manually.
