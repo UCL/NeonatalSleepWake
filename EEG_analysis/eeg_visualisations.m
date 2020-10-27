@@ -1,6 +1,8 @@
 % This script visualizes EEG data from eeglab from selected channels and
 % performs periodicity analysis on it. To get started, run it and follow
-% the GUI windows that pop up to give inputs and/or options.
+% the GUI windows that pop up to select which files to read, which channels
+% to plot and which variables to analyse for periodicity.
+
 %% Run tests
 runtests('test_process_bursts.m');
 %% Set initial values
