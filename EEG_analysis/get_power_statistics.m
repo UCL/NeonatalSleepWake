@@ -8,7 +8,7 @@ function [mean_power, median_power] = get_power_statistics(events, channels_in, 
 %    - channels_in: string or cell array of channel names (usually found in
 %                   eeg_data.chanlocs.labels)
 %  Optional:
-%    - normalised (default false): Use normalised instead of absolute power
+%    - 'normalised' (default false): Use normalised instead of absolute power
 % Outputs:
 %    - mean_power: Array of mean powers for each channel in channels_in
 %    - median_power: Array of median powers for each channel in channels_in

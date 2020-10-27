@@ -1,5 +1,5 @@
 function [peak_period,peak_amplitude] = periodicity(events, channel, field, varargin)
-% function periodicity(events, channel, field, smooth, color)
+% function periodicity(events, channel, field)
 %
 % Perform and plot frequency analysis for events in selected channel.
 % Returns the period and amplitude of the signal with the highest amplitude
@@ -15,12 +15,12 @@ function [peak_period,peak_amplitude] = periodicity(events, channel, field, vara
 %            - 'power'
 %            - 'power_n'
 %  Optional:
-%    - window (default [0.2 5]): period range where to look for the peak
+%    - 'window' (default [0.2 5]): period range where to look for the peak
 %                                amplitude
-%    - smooth (default true): smooth data with a moving average before
+%    - 'smooth' (default true): smooth data with a moving average before
 %      fourier transforming.
-%    - color (default [0 0 1]): Color for 1D plots
-%    - verbose (default true): switch to enable/disable plots
+%    - 'color' (default [0 0 1]): Color for 1D plots
+%    - 'verbose' (default true): switch to enable/disable plots
 % Outputs:
 %    - peak_period: period (hrs) of the signal with the highest amplitude
 %                   within the period window
