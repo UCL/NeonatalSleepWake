@@ -8,7 +8,7 @@ To use the scripts and functions in EEG_analysis, clone this git repository (cli
 
 ### Dependencies
 
-These scripts require MATLAB 2019b or later.
+These scripts require MATLAB 2019b or later. They require [eeglab](https://sccn.ucsd.edu/eeglab/index.php) to be installed and the installation directory added to the MATLAB path.
 
 ### Usage
 
