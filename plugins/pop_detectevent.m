@@ -1,7 +1,7 @@
 % pop_detectevent() - detect events such as sleep spindles or blinks.
 %
 % Parameters for detecting sleep spindles are from the following reference
-% Antony et al. (2018) Sleep Spindle Refractoriness Segregates Periods of 
+% Antony et al. (2018) Sleep Spindle Refractoriness Segregates Periods of
 % Memory Reactivation, vol 28 (11,) P1736-1743.E4, DOI:https://doi.org/10.1016/j.cub.2018.04.020
 %
 % Usage:
@@ -15,12 +15,12 @@
 %   'channels'  - [integer] selected channel(s) {default all}
 %   'threshold' - [float] spindle detection threshold in standard deviation
 %                of the RMS of the selected channel {default 1.5}
-%   'transform'   - [string or function] window limit in seconds for applying transformation 
-%   'transwin'    - [min max] window limit in seconds for applying transformation 
+%   'transform'   - [string or function] window limit in seconds for applying transformation
+%   'transwin'    - [min max] window limit in seconds for applying transformation
 %                 {default [-0.2 0.2]}. Emply means that the transformation
 %                 is applied to the whole data.
 %   'eventwin' - [min max] window limit for spindle. The signal must
-%                 be above 'threshold' for at least 'min' second and at 
+%                 be above 'threshold' for at least 'min' second and at
 %                 most 'max' seconds.  {default [0.3 3]}
 %
 % Outputs:
@@ -52,22 +52,24 @@ if nargin < 1
 end
 
 if nargin == 1
-	% -----------------------
-	promptstr    = { 'Selected channel(s)' ...
+    % -----------------------
+    promptstr    = { 'Selected channel(s)' ...
              'Transformation to apply to the data (none is ok)' ...
              'Moving window to apply transformation in s (default all data)' ...
              'Threshold on thansformed data in standard dev.' ...
              'Min and max event duration above threshold (in s)' ...
+             'Min time between events (in s)' ...
              'Event name' };
-	inistr       = { '1' '@rmsave' '-0.4 0.4' '1.5' '0.5 20' 'burst' };
-	result       = inputdlg2(promptstr, 'Detect events -- pop_detectevent()', 1,  inistr, 'pop_detectevent');
-	if isempty(result), return; end
+    inistr       = { '1' '@rmsave' '-0.4 0.4' '1.5' '0.5 20' '0.5' 'burst' };
+    result       = inputdlg2(promptstr, 'Detect events -- pop_detectevent()', 1,  inistr, 'pop_detectevent');
+    if isempty(result), return; end
     options = { 'channels' str2num([ '[' result{1} ']' ]) ...
                 'transform' result{2} ...
                 'transwin' str2num( [ '[' result{3} ']' ]) ...
                 'threshold' str2num(result{4}) ...
                 'eventwin' str2num( [ '[' result{5} ']' ] ) ...
-                'eventname' result{6} ...
+                'eventdiff' str2num( [ '[' result{6} ']' ] ) ...
+                'eventname' result{7} ...
                 };
 else
     options = varargin;
@@ -78,15 +80,16 @@ g = finputcheck(options, {'channels'   'integer'  [1 EEG.pnts]  1:EEG.nbchan;
                           'transwin'   'float'    []            [-0.4 0.4];
                           'threshold'  'float'    []            1.5;
                           'eventname'  'string'   {}           'burst';
-                          'eventwin' 'float'    []             [0.5 20]}, 'pop_detectevent');
+                          'eventwin'   'float'    []             [0.5 20];
+                          'eventdiff'  'float'    []            0.5}, 'pop_detectevent');
 if ischar(g), error(g); end
-           
+
 % compute RMS of all selected channels
 spindleThresh = zeros(1, EEG.pnts);
 tranformFunc  = g.transform;
-if ~isempty(tranformFunc) && tranformFunc(1) == '@', tranformFunc = eval(tranformFunc); end;
+if ~isempty(tranformFunc) && tranformFunc(1) == '@', tranformFunc = eval(tranformFunc); end
 for iChan = 1:length(g.channels)
-    
+
     if isempty(g.transform)
         rmsMoveAv = EEG.data(g.channels(iChan), :);
     else
@@ -101,38 +104,58 @@ for iChan = 1:length(g.channels)
             rmsMoveAv = feval(g.transform, EEG.data(g.channels(iChan), :));
         end
     end
-    
+
     % threshold if per channel
-    threshold = std(rmsMoveAv)*g.threshold;    
+    threshold = std(rmsMoveAv)*g.threshold;
     spindleThresh = spindleThresh | rmsMoveAv > threshold;
 end
 
 % look for regions
 spindleLowLimits = round(EEG.srate*g.eventwin(1));
 spindleHiLimits = round(EEG.srate*g.eventwin(2));
-continuousAboveTheshold = 0;
+spindleOnsetDiff = round(EEG.srate*g.eventdiff);
+continuousAboveThreshold = 0;
 onsetSpindle = 0;
+
 for iSample = 1:EEG.pnts
-	if spindleThresh(iSample)
-		offsetSpindle = 0;
-		continuousAboveTheshold = continuousAboveTheshold+1;
-	else
-		offsetSpindle = iSample;
-		continuousAboveTheshold = 0;
-	end
-
-	if continuousAboveTheshold > spindleLowLimits
-		onsetSpindle = iSample-continuousAboveTheshold;
-	end
-
-	if onsetSpindle ~= 0 && offsetSpindle ~= 0
-		% you have a spindle
-		EEG.event(end+1).type = g.eventname;		
-		EEG.event(end).latency = onsetSpindle;
-		EEG.event(end).duration = offsetSpindle-onsetSpindle;
-        onsetSpindle = 0;
+    if spindleThresh(iSample)
         offsetSpindle = 0;
-	end
+        continuousAboveThreshold = continuousAboveThreshold+1;
+    else
+        offsetSpindle = iSample;
+        continuousAboveThreshold = 0;
+    end
+
+    if continuousAboveThreshold > spindleLowLimits
+        onsetSpindle = iSample-continuousAboveThreshold;
+    end
+
+        
+    if onsetSpindle ~= 0 && offsetSpindle ~= 0
+        % You have a spindle. 
+        % Check duration is within limits.
+        duration = (offsetSpindle - onsetSpindle);
+        durationWithinLimits = spindleLowLimits < duration && duration < spindleHiLimits;
+        % If a previous event of the same type exists, check time
+        % difference to previous event is within limits 
+        if isfield(EEG.event(end), 'latency') && ...
+                isfield(EEG.event(end), 'duration') && ...
+                isfield(EEG.event(end), 'type') && ...
+                strcmp(EEG.event(end).type, g.eventname)
+            diffToPrevious = onsetSpindle - (EEG.event(end).latency + EEG.event(end).duration);
+        else
+            diffToPrevious = realmax;
+        end
+        diffWithinLimits = diffToPrevious > spindleOnsetDiff;
+        
+        if durationWithinLimits && diffWithinLimits
+            EEG.event(end+1).type = g.eventname;
+            EEG.event(end).latency = onsetSpindle;
+            EEG.event(end).duration = offsetSpindle-onsetSpindle;
+            onsetSpindle = 0;
+            offsetSpindle = 0;
+        end
+    end
 end
 
 % resort events
