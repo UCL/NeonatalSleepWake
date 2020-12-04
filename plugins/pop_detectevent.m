@@ -22,11 +22,14 @@
 %   'eventwin' - [min max] window limit for spindle. The signal must
 %                 be above 'threshold' for at least 'min' second and at
 %                 most 'max' seconds.  {default [0.3 3]}
+%   'eventdiff' - [float] minimum time between events to classify them as
+%                 separate events
 %
 % Outputs:
 %   OUTEEG     - output dataset with update events
 %
 % Author: Arnaud Delorme, UCSD/CNRS, 2019
+%         Tuomas Koskela, UCL/RITS, 2020
 
 % Copyright (C) 2019 Arnaud Delorme
 %
@@ -79,8 +82,8 @@ g = finputcheck(options, {'channels'   'integer'  [1 EEG.pnts]  1:EEG.nbchan;
                           'transform'  ''         []            '';
                           'transwin'   'float'    []            [-0.4 0.4];
                           'threshold'  'float'    []            1.5;
-                          'eventname'  'string'   {}           'burst';
-                          'eventwin'   'float'    []             [0.5 20];
+                          'eventname'  'string'   {}            'burst';
+                          'eventwin'   'float'    []            [0.5 20];
                           'eventdiff'  'float'    []            0.5}, 'pop_detectevent');
 if ischar(g), error(g); end
 
