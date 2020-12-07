@@ -1,3 +1,5 @@
+%% Run tests
+runtests('test_detectevent.m')
 %% Read in EEG data
 eeg_data = pop_loadset();
 %% Select channels
