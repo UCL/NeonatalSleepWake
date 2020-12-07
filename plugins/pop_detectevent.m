@@ -120,7 +120,10 @@ spindleOnsetDiff = round(EEG.srate*g.eventdiff);
 continuousAboveThreshold = 0;
 onsetSpindle = 0;
 
+new_event = struct('type',[],'latency',[],'duration',[]);
+
 for iSample = 1:EEG.pnts
+
     if spindleThresh(iSample)
         offsetSpindle = 0;
         continuousAboveThreshold = continuousAboveThreshold+1;
@@ -133,15 +136,16 @@ for iSample = 1:EEG.pnts
         onsetSpindle = iSample-continuousAboveThreshold;
     end
 
-        
     if onsetSpindle ~= 0 && offsetSpindle ~= 0
-        % You have a spindle. 
+        % You have a spindle.
         % Check duration is within limits.
         duration = (offsetSpindle - onsetSpindle);
         durationWithinLimits = spindleLowLimits < duration && duration < spindleHiLimits;
         % If a previous event of the same type exists, check time
-        % difference to previous event is within limits 
-        if isfield(EEG.event(end), 'latency') && ...
+        % difference to previous event is within limits
+        if isfield(EEG, 'event') && ...
+                isstruct(EEG.event) && ...
+                isfield(EEG.event(end), 'latency') && ...
                 isfield(EEG.event(end), 'duration') && ...
                 isfield(EEG.event(end), 'type') && ...
                 strcmp(EEG.event(end).type, g.eventname)
@@ -150,11 +154,16 @@ for iSample = 1:EEG.pnts
             diffToPrevious = realmax;
         end
         diffWithinLimits = diffToPrevious > spindleOnsetDiff;
-        
+
         if durationWithinLimits && diffWithinLimits
-            EEG.event(end+1).type = g.eventname;
-            EEG.event(end).latency = onsetSpindle;
-            EEG.event(end).duration = offsetSpindle-onsetSpindle;
+            new_event.type = g.eventname;
+            new_event.latency = onsetSpindle;
+            new_event.duration = offsetSpindle-onsetSpindle;
+            if isfield(EEG, 'event') && isstruct(EEG.event)
+                EEG.event(end+1) = new_event;
+            else
+                EEG.event = new_event;
+            end
             onsetSpindle = 0;
             offsetSpindle = 0;
         end
