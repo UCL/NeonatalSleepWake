@@ -15,7 +15,7 @@ params.light_threshold_std = 2;
 params.duration_limit = 40 * 1e-3;
 params.interval_limit = 10 * 1e-3;
 params.period_after_end = 50 * 1e-3;
-params.dt = mean(diff(data_table.Time), 'omitnan');
+params.dt = mean(diff(data.Time), 'omitnan');
 
 light_events = detect_light_events(data, params);
 movement_events = detect_movement_events(data, params, light_events);
