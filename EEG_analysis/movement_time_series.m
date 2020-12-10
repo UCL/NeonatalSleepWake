@@ -1,3 +1,11 @@
+% This script processes time series that contain pixel change rates
+% processed from video clips. It detects movement events by the following
+% criterion:
+% - signal above 3 standard deviations of the mean with gaps of less than
+%   1000ms below threshold in between 
+% In addition, events that occurr simultaneously in each time series and
+% are above 5 standard deviations
+
 %% Run tests
 runtests('test_movement_time_series.m')
 %% Read time series
@@ -72,29 +80,32 @@ for ivar = 1:n_variables
         + duration_frames(mask) + round(period_after_end / dt);
 end
 %% Mark events on time series
-figure(1)
-clf;
-yname = variable_names{2};
-plot(data_table.Time, data_table.(yname),'.-')
-hold on
-threshold = mean(data_table.(yname), 'omitnan') + movement_threshold_std * std(data_table.(yname), 'omitnan');
-plot(data_table.Time, ones(size(data_table,1),1) * threshold, 'r--')
-plot(data_table.Time(movement_events.(yname).onset), ...
-    data_table.(yname)(movement_events.(yname).onset), 'ro', 'markersize',10,'linewidth',2)
-plot(data_table.Time(light_events.onset), ...
-    data_table.(yname)(light_events.onset), 'm*', 'markersize',10,'linewidth',2)
-for i = 1:movement_events.(yname).n_events
-    ibeg = max(1,movement_events.(yname).onset(i) - 1);
-    iend = min(numel(data_table.Time), movement_events.(yname).offset(i));
-    area(data_table.Time(ibeg:iend), data_table.(yname)(ibeg:iend), ...
-        'edgecolor','none','facecolor','r','facealpha',0.5)
+for iname = 2:numel(variable_names)
+    yname = variable_names{iname};
+    figure()
+    clf;
+    plot(data_table.Time, data_table.(yname),'.-')
+    hold on
+    threshold = mean(data_table.(yname), 'omitnan') ...
+        + movement_threshold_std * std(data_table.(yname), 'omitnan');
+    plot(data_table.Time, ones(size(data_table,1),1) * threshold, 'r--')
+    plot(data_table.Time(movement_events.(yname).onset), ...
+        data_table.(yname)(movement_events.(yname).onset), 'ro', 'markersize',10,'linewidth',2)
+    plot(data_table.Time(light_events.onset), ...
+        data_table.(yname)(light_events.onset), 'm*', 'markersize',10,'linewidth',2)
+    for i = 1:movement_events.(yname).n_events
+        ibeg = max(1,movement_events.(yname).onset(i) - 1);
+        iend = min(numel(data_table.Time), movement_events.(yname).offset(i));
+        area(data_table.Time(ibeg:iend), data_table.(yname)(ibeg:iend), ...
+            'edgecolor','none','facecolor','r','facealpha',0.5)
+    end
+    xlabel('Time (s)')
+    ylabel('Change in pixel intensity')
+    title(yname)
+    legend('Time series','Movement threshold','Movement event onset','Light event','Movement event')
 end
-xlabel('Time (s)')
-ylabel('Change in pixel intensity')
-title(yname)
-legend('Time series','Movement threshold','Movement event onset','Light event','Movement event')
 %% Plot events one by one
-% figure(2)
+% figure()
 % clf;
 % yname = variable_names{2};
 % for i = 1:movement_events.(yname).n_events
