@@ -50,12 +50,21 @@ for ivar = 1:n_variables
     % next event) AND sufficient time from previous event AND are not light
     % events
     mask = (duration_mask | ~to_mask) & from_mask & ~light_mask(events);
+    
     movement_events.(varname).n_events = sum(mask);
+    movement_events.(varname).dt = params.dt;
     movement_events.(varname).onset = events(mask);
-    movement_events.(varname).duration_frames = duration_frames(mask);
-    movement_events.(varname).duration_s = duration_frames(mask) * params.dt;
-    movement_events.(varname).offset = events(mask) ...
-        + duration_frames(mask) + round(params.period_after_end / params.dt);
+    
+    % Cap duration at the end of the time series
+    movement_events.(varname).duration_frames = min(...
+        numel(data) - movement_events.(varname).onset, ...
+        duration_frames(mask) + round(params.period_after_end / params.dt));
+    
+    movement_events.(varname).duration_s = ....
+        movement_events.(varname).duration_frames * params.dt;
+    
+    movement_events.(varname).offset = movement_events.(varname).onset + ...
+        movement_events.(varname).duration_frames - 1;
 end
 
 end
