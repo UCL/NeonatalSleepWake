@@ -25,3 +25,5 @@ light_events = detect_light_events(data_table, params);
 movement_events = detect_movement_events(data_table, params, light_events);
 %% Mark events on time series
 plot_movement_events(data_table, movement_events, light_events, params);
+%% Do statistics and visualise
+movement_event_statistics(data_table, movement_events, true);
