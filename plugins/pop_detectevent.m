@@ -171,8 +171,10 @@ for iSample = 1:EEG.pnts
 end
 
 % resort events
-[~,ind] = sort([EEG.event.latency]);
-EEG.event = EEG.event(ind);
+if isstruct(EEG.event) && isfield(EEG.event,'latency')
+    [~,ind] = sort([EEG.event.latency]);
+    EEG.event = EEG.event(ind);
+end
 
 % history
 com = sprintf('EEG = pop_detectevent(EEG, %s);', vararg2str(options));
