@@ -1,9 +1,21 @@
 function fig = plot_movement_events(data_table, movement_events, light_events, params)
+% function fig = plot_movement_events(data_table, movement_events, light_events, params)
+%
+% Plot time series and events detected from it by detect_movement_events.m
+%
+% Inputs:
+%  - data_table:
+%  - movement_events:
+%  - light_events:
+%  - params:
+% Outputs:
+%   - fig: figure handle
 
+fig = figure();
 variable_names = data_table.Properties.VariableNames;
 for iname = 2:numel(variable_names)
     varname = variable_names{iname};
-    fig = figure();   
+    subplot(numel(variable_names)-1, 1, iname-1);
     plot(data_table.Time, data_table.(varname),'.-')
     hold on
     threshold = mean(data_table.(varname), 'omitnan') ...

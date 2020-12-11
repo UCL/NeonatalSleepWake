@@ -12,7 +12,7 @@ params = struct();
 params.movement_threshold_std = 3;
 params.light_threshold_std = 5;
 params.duration_limit = 40 * 1e-3;
-params.interval_limit = 1000 * 1e-3;
+params.interval_limit = 500 * 1e-3;
 params.period_after_end = 500 * 1e-3;
 params.dt = mean(diff(data_table.Time), 'omitnan');
 %% Detect light events
@@ -22,4 +22,4 @@ movement_events = detect_movement_events(data_table, params, light_events);
 %% Mark events on time series
 plot_movement_events(data_table, movement_events, light_events, params);
 %% Do statistics and visualise
-movement_event_statistics(data_table, movement_events, true);
+movement_event_statistics(data_table, movement_events);
