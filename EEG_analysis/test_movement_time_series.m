@@ -19,7 +19,8 @@ params.dt = mean(diff(data.Time), 'omitnan');
 
 light_events = detect_light_events(data, params);
 movement_events = detect_movement_events(data, params, light_events);
-stats = movement_event_statistics(data, movement_events, false);
+stats = movement_event_statistics(data, movement_events,...
+    'visualize',false,'baseline',0);
 
 reference_n_events = [NaN,2,4,6];
 
