@@ -7,6 +7,14 @@ runtests('test_movement_time_series.m')
 %% Read time series
 [filename,pathname] = uigetfile('*.csv');
 data_table = readtable([pathname,filename]);
+% Filter out non-numeric columns
+% Go backwards to stop indices from going out of bounds
+for i = numel(data_table.Properties.VariableNames):-1:2
+    var = data_table.Properties.VariableNames{i};
+    if ~isnumeric(data_table.(var)) || ~all(isfinite(data_table.(var)))
+        data_table.(var) = [];
+    end
+end
 %% Set parameters
 params = struct();
 params.movement_threshold_std = 3;
@@ -23,3 +31,14 @@ movement_events = detect_movement_events(data_table, params, light_events);
 plot_movement_events(data_table, movement_events, light_events, params);
 %% Do statistics and visualise
 movement_event_statistics(data_table, movement_events);
+%% Export events
+eeglab_movement_events = convert_events(movement_events);
+eeg = pop_loadset();
+eeg = pop_importevent(eeg,'event',eeglab_movement_events,...
+    'fields',{'type','latency','duration'},'append','yes');
+%% Save output
+[out_file_name,out_path_name] = uiputfile('*.set','Select output file',...
+    [eeg.setname '_movement.set']);
+pop_saveset(eeg,'savemode','twofiles',...
+    'filename',out_file_name,...
+    'filepath',out_path_name);
