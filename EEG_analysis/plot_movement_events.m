@@ -13,13 +13,16 @@ function fig = plot_movement_events(data_table, movement_events, light_events, p
 
 fig = figure();
 variable_names = data_table.Properties.VariableNames;
-for iname = 2:numel(variable_names)
-    varname = variable_names{iname};
-    subplot(numel(variable_names)-1, 1, iname-1);
+n_variables = numel(variable_names) - 1;
+for ivar = 1:n_variables
+
+    local_params = get_local_params(params, ivar, n_variables);
+    varname = variable_names{ivar+1};
+    subplot(n_variables, 1, ivar);
     plot(data_table.Time, data_table.(varname),'.-')
     hold on
     threshold = mean(data_table.(varname), 'omitnan') ...
-        + params.movement_threshold_std * std(data_table.(varname), 'omitnan');
+        + local_params.movement_threshold_std * std(data_table.(varname), 'omitnan');
     plot(data_table.Time, ones(size(data_table,1),1) * threshold, 'r--')
     plot(data_table.Time(movement_events.(varname).onset), ...
         data_table.(varname)(movement_events.(varname).onset), 'ro', 'markersize',10,'linewidth',2)
@@ -34,7 +37,13 @@ for iname = 2:numel(variable_names)
     xlabel('Time (s)')
     ylabel('Change in pixel intensity')
     title(varname)
-    legend('Time series','Movement threshold','Movement event onset','Light event','Movement event')
+    if numel(light_events.onset) > 0
+        legend('Time series','Movement threshold','Movement event onset','Light event','Movement event',...
+            'location','eastoutside');
+    else
+        legend('Time series','Movement threshold','Movement event onset','Movement event',...
+            'location','eastoutside');
+    end
 end
 
 end

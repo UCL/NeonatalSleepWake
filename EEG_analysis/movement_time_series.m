@@ -16,12 +16,7 @@ for i = numel(data_table.Properties.VariableNames):-1:2
     end
 end
 %% Set parameters
-params = struct();
-params.movement_threshold_std = 3;
-params.light_threshold_std = 5;
-params.duration_limit = 40 * 1e-3;
-params.interval_limit = 500 * 1e-3;
-params.period_after_end = 500 * 1e-3;
+params = get_params_for_movement_time_series(true);
 params.dt = mean(diff(data_table.Time), 'omitnan');
 %% Detect light events
 light_events = detect_light_events(data_table, params);

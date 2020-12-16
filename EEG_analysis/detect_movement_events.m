@@ -4,17 +4,20 @@ movement_events = struct();
 
 variable_names = data_table.Properties.VariableNames;
 n_variables = numel(variable_names) - 1;
-interval_limit_frames = round(params.interval_limit/params.dt);
 
 % Set mask for filtering out light events
 light_mask = false(size(data_table.Time));
 light_mask(light_events.onset) = true;
 
 for ivar = 1:n_variables
+
+    local_params = get_local_params(params, ivar, n_variables);
+    interval_limit_frames = round(local_params.interval_limit/local_params.dt);
+
     varname = variable_names{ivar+1};
     data = data_table.(varname);
     movement_threshold = mean(data, 'omitnan') ...
-        + params.movement_threshold_std * std(data, 'omitnan');
+        + local_params.movement_threshold_std * std(data, 'omitnan');
     events = find(data(2:end) > movement_threshold & ...
         data(1:end-1) < movement_threshold) + 1;
     duration_mask = false(size(events));
@@ -40,9 +43,9 @@ for ivar = 1:n_variables
             frames_from_previous_event = intmax;
         end
         
-        duration_mask(ievent) = duration_frames(ievent) * params.dt >= params.duration_limit;
-        to_mask(ievent) = frames_to_next_event * params.dt >= params.interval_limit;
-        from_mask(ievent) = frames_from_previous_event * params.dt >= params.interval_limit;
+        duration_mask(ievent) = duration_frames(ievent) * local_params.dt >= local_params.duration_limit;
+        to_mask(ievent) = frames_to_next_event * local_params.dt >= local_params.interval_limit;
+        from_mask(ievent) = frames_from_previous_event * local_params.dt >= local_params.interval_limit;
         
     end
     
