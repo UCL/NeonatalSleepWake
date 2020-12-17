@@ -21,7 +21,8 @@
 %                 is applied to the whole data.
 %   'eventwin' - [min max] window limit for spindle. The signal must
 %                 be above 'threshold' for at least 'min' second and at
-%                 most 'max' seconds.  {default [0.3 3]}
+%                 most 'max' seconds.  {default [0.3 3]}. Events longer
+%                 than 'max' will not be classified as events.
 %   'eventdiff' - [float] minimum time between events to classify them as
 %                 separate events
 %
