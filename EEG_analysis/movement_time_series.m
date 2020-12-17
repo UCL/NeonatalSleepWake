@@ -12,7 +12,7 @@ full_table = readtable([pathname,filename]);
 for i = numel(full_table.Properties.VariableNames):-1:2
     var = full_table.Properties.VariableNames{i};
     if ~isnumeric(full_table.(var)) || ~all(isfinite(full_table.(var)))
-        data_table.(var) = [];
+        full_table.(var) = [];
     end
 end
 %% Process data table
