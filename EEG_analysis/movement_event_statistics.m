@@ -20,7 +20,7 @@ function stats = movement_event_statistics(data_table, events, varargin)
 params = inputParser;
 addOptional(params, 'baseline', 1.0, @(x) isnumeric(x) && x >= 0);
 addOptional(params, 'visualize', true, @(x) islogical(x));
-addOptional(params, 'normalize', false, @(x) islogical(x));
+addOptional(params, 'normalize', true, @(x) islogical(x));
 parse(params, varargin{:});
 
 stats = struct();
