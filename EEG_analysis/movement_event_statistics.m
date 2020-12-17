@@ -43,12 +43,26 @@ for iname = 2:numel(variable_names)
         iend = min(numel(data), events.(varname).offset(ievent));
         signal(1:iend-ibeg+1,ievent) = data(ibeg:iend);
 
+        % Normalize the duration of all events to the duration of the
+        % longest event. The event signal is interpolated linearly to have
+        % the correct number of data points. The baseline time is not
+        % included in the interpolation to keep the event onset at t = 0.
+        % Since each event has the same length basline, it can just be kept
+        % as it is.
         if params.Results.normalize
 
-            x = baseline_frames:iend-ibeg+1;
-            v = signal(baseline_frames:iend-ibeg+1,ievent);
-            xq = linspace(baseline_frames,x(end),max_duration-baseline_frames);
-            signal(baseline_frames+1:end,ievent) = interp1(x,v,xq,'linear');
+            if events.(varname).onset(ievent) < baseline_frames
+                i1 = events.(varname).onset(ievent);
+                i2 = iend - ibeg + 1;
+            else
+                i1 = baseline_frames + 1;
+                i2 = iend - ibeg + 1;
+            end
+
+            x = i1:i2;
+            v = signal(i1:i2,ievent);
+            xq = linspace(i1,x(end),max_duration-baseline_frames);
+            signal(i1:end,ievent) = interp1(x,v,xq,'linear');
 
         end
 
@@ -71,6 +85,8 @@ for iname = 2:numel(variable_names)
             flipud(stats.(varname).median + stats.(varname).stderr)], ...
             'r','facealpha',0.25,'edgecolor','r')
         title(varname)
+        grid on
+        box on
         if params.Results.normalize
             xlabel('duration (normalized)')
         else
