@@ -9,17 +9,17 @@ runtests('test_movement_time_series.m')
 full_table = readtable([pathname,filename]);
 % Filter out non-numeric columns
 % Go backwards to stop indices from going out of bounds
-for i = numel(data_table.Properties.VariableNames):-1:2
-    var = data_table.Properties.VariableNames{i};
-    if ~isnumeric(data_table.(var)) || ~all(isfinite(data_table.(var)))
+for i = numel(full_table.Properties.VariableNames):-1:2
+    var = full_table.Properties.VariableNames{i};
+    if ~isnumeric(full_table.(var)) || ~all(isfinite(full_table.(var)))
         data_table.(var) = [];
     end
 end
+%% Process data table
+[data_table, data_table_ctrl, control_table] = split_control_columns(full_table);
 %% Set parameters
 params = get_params_for_movement_time_series(true);
 params.dt = mean(diff(data_table.Time), 'omitnan');
-%% Process data table
-[data_table, data_table_ctrl, control_table] = split_control_columns(full_table);
 %% Detect light events
 light_events = detect_light_events(data_table, params);
 %% Detect movement events
