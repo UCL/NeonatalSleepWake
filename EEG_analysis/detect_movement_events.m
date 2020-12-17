@@ -1,4 +1,21 @@
 function movement_events = detect_movement_events(data_table, params, light_events)
+% function movement_events = detect_movement_events(data_table, params, light_events)
+%
+% Detect movement events in all time series of data_table that are not
+% tagged as control series. A movement detect is classified as a signal
+% that has (sufficient duration OR insufficient time to next event) AND
+% sufficient time from previous event.
+%
+% Input:
+%   - data_table: table with Time in the first column and 2 or more signals
+%                 in the columns 2:end
+%   - params: struct with the fields interval_limit, duration_limit and
+%             movement_threshold_std set.
+%   - light_events: output from detect_light_events. These events will be
+%                   ignored by the detection
+% Output:
+%   - movement_events: struct with a sub-struct for each time series
+%                      containing the onset and duration of each event
 
 movement_events = struct();
 

@@ -6,7 +6,7 @@
 runtests('test_movement_time_series.m')
 %% Read time series
 [filename,pathname] = uigetfile('*.csv');
-data_table = readtable([pathname,filename]);
+full_table = readtable([pathname,filename]);
 % Filter out non-numeric columns
 % Go backwards to stop indices from going out of bounds
 for i = numel(data_table.Properties.VariableNames):-1:2
@@ -18,14 +18,25 @@ end
 %% Set parameters
 params = get_params_for_movement_time_series(true);
 params.dt = mean(diff(data_table.Time), 'omitnan');
+%% Process data table
+[data_table, data_table_ctrl, control_table] = split_control_columns(full_table);
 %% Detect light events
 light_events = detect_light_events(data_table, params);
 %% Detect movement events
 movement_events = detect_movement_events(data_table, params, light_events);
+if ~isempty(control_table)
+    movement_events_ctrl = detect_movement_events(data_table_ctrl, params, light_events);
+end
 %% Mark events on time series
 plot_movement_events(data_table, movement_events, light_events, params);
+if ~isempty(control_table)
+    plot_movement_events(data_table_ctrl, movement_events_ctrl, light_events, params);
+end
 %% Do statistics and visualise
 movement_event_statistics(data_table, movement_events);
+if ~isempty(control_table)
+    movement_event_statistics(data_table_ctrl, movement_events_ctrl);
+end
 %% Export events
 eeglab_movement_events = convert_events(movement_events);
 eeg = pop_loadset();
