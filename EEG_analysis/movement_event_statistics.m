@@ -30,7 +30,7 @@ stats = struct();
 variable_names = data_table.Properties.VariableNames;
 if params.Results.visualize
     fig = figure;
-    tiledlayout(numel(variable_names)-1, 1)
+    layout = tiledlayout(numel(variable_names)-1, 1);
     ax = [];
 end
 for iname = 2:numel(variable_names)
@@ -129,12 +129,6 @@ for iname = 2:numel(variable_names)
             keyboard
         end
 
-        if params.Results.normalize
-            xlabel('duration (normalized)')
-        else
-            xlabel('time (s)')
-        end
-        ylabel('pixel change')
         title(varname)
         grid on
         box on
@@ -142,8 +136,16 @@ for iname = 2:numel(variable_names)
     end
 end
 
-if params.Results.visualize && params.Results.linkaxes
-    linkaxes(ax,'x')
+if params.Results.visualize 
+    if params.Results.linkaxes
+        linkaxes(ax,'x')
+    end
+    if params.Results.normalize
+        xlabel(layout, 'duration (normalized)')
+    else
+        xlabel(layout, 'time (s)')
+    end
+    ylabel(layout, 'pixel change')
 end
 
 end
