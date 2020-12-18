@@ -25,9 +25,7 @@ for ifile = 1:numel(in_file_names)
     end
     %% Process data table
     [data_table, data_table_ctrl, ~] = split_control_columns(full_table);
-    assert(isequal(data_table.Properties.VariableNames, master_table.Properties.VariableNames) ||...
-        isempty(master_table), ...
-        'Labels of non-control columns must be equal in all input files')
+    [data_table, master_table] = merge_tables(data_table, master_table);
     %% Append to master table
     master_table = [master_table;data_table];
 end

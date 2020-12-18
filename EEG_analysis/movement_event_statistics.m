@@ -34,7 +34,12 @@ if params.Results.visualize
     ax = [];
 end
 for iname = 2:numel(variable_names)
+
     varname = variable_names{iname};
+
+    if events.(varname).n_events == 0
+        continue
+    end
 
     if params.Results.verbose
 
@@ -81,7 +86,7 @@ for iname = 2:numel(variable_names)
                 i1 = events.(varname).onset(ievent);
             end
             if events.(varname).offset(ievent) + baseline_frames > numel(data)
-                i2 = events.(varname).offset(ievent);
+                i2 = iend - ibeg + 1 - (numel(data) - events.(varname).offset(ievent));
             end
 
             x = i1:i2;
@@ -116,9 +121,13 @@ for iname = 2:numel(variable_names)
         patch([min(xlim), 0, 0, min(xlim)],...
             [min(ylim), min(ylim), max(ylim), max(ylim)],...
             'k','facealpha',0.2,'edgecolor','none')
+        try
         patch([t0, max(t), max(t), t0],...
             [min(ylim), min(ylim), max(ylim), max(ylim)],...
             'k','facealpha',0.2,'edgecolor','none')
+        catch
+            keyboard
+        end
 
         if params.Results.normalize
             xlabel('duration (normalized)')
