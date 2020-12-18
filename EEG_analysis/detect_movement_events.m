@@ -60,7 +60,7 @@ for ivar = 1:n_variables
             frames_from_previous_event = intmax;
         end
         
-        duration_mask(ievent) = duration_frames(ievent) * local_params.dt >= local_params.duration_limit;
+        duration_mask(ievent) = duration_frames(ievent) * local_params.dt >= local_params.duration_min;
         to_mask(ievent) = frames_to_next_event * local_params.dt >= local_params.interval_limit;
         from_mask(ievent) = frames_from_previous_event * local_params.dt >= local_params.interval_limit;
         
@@ -80,7 +80,12 @@ for ivar = 1:n_variables
         numel(data) - movement_events.(varname).onset, ...
         duration_frames(mask) + round(params.period_after_end / params.dt));
     
-    movement_events.(varname).duration_s = ....
+    % Cap duration at max duration
+    movement_events.(varname).duration_frames = min(...
+        round(local_params.duration_max / local_params.dt),...
+        movement_events.(varname).duration_frames);
+
+    movement_events.(varname).duration_s = ...
         movement_events.(varname).duration_frames * params.dt;
     
     movement_events.(varname).offset = movement_events.(varname).onset + ...
