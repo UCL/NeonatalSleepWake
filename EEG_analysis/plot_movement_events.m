@@ -4,10 +4,13 @@ function fig = plot_movement_events(data_table, movement_events, light_events, p
 % Plot time series and events detected from it by detect_movement_events.m
 %
 % Inputs:
-%  - data_table:
-%  - movement_events:
-%  - light_events:
-%  - params:
+%   - data_table: table with Time in the first column and 2 or more signals
+%                 in the columns 2:end
+%   - movement_events: struct with data on detected events. Produced by
+%             detect_movement_events.m
+%   - light_events: struct with onsets of detected light events. Produced
+%                   by detect_light_events.
+%   - params: Parameters from get_params_for_movement_time_series
 % Outputs:
 %   - fig: figure handle
 

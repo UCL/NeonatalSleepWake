@@ -1,3 +1,7 @@
+% This script processes multiple time series that contain pixel change
+% rates processed from video clips. It detects movement events and light
+% events. It then plots the median of all events normalized to the same
+% start and end time, and displays statistical information about the events.
 %% Run tests
 runtests('test_movement_time_series.m')
 %% Get file names for I/O

@@ -1,7 +1,8 @@
 % This script processes time series that contain pixel change rates
-% processed from video clips. It detects movement events and light events,
-% plots them, and displays statistical information about detected events.
-
+% processed from video clips. It detects movement events and light events
+% and plots the time series with the events highlighted. It then plots the
+% median of all events normalized to the same start and end time, and
+% displays statistical information about the events.
 %% Run tests
 runtests('test_movement_time_series.m')
 %% Read time series
