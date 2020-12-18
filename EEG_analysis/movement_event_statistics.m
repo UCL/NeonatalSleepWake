@@ -51,7 +51,7 @@ for iname = 2:numel(variable_names)
     end
 
     baseline_frames = round(params.Results.baseline / events.(varname).dt);
-    max_duration = max(events.(varname).duration_frames + baseline_frames);
+    max_duration = max(events.(varname).duration_frames + 2 * baseline_frames);
     t = (1:max_duration) * events.(varname).dt - params.Results.baseline;
     signal = NaN(max_duration,events.(varname).n_events);
 
@@ -59,7 +59,7 @@ for iname = 2:numel(variable_names)
 
     for ievent = 1:events.(varname).n_events
         ibeg = max(1, events.(varname).onset(ievent)-baseline_frames);
-        iend = min(numel(data), events.(varname).offset(ievent));
+        iend = min(numel(data), events.(varname).offset(ievent)+baseline_frames);
         signal(1:iend-ibeg+1,ievent) = data(ibeg:iend);
 
         % Normalize the duration of all events to the duration of the
@@ -70,12 +70,15 @@ for iname = 2:numel(variable_names)
         % as it is.
         if params.Results.normalize
 
-            if events.(varname).onset(ievent) < baseline_frames
+            i1 = baseline_frames + 1;
+            i2 = iend - ibeg + 1 - baseline_frames;
+
+            % Handle overflowing the ends of the time series separately
+            if events.(varname).onset(ievent) - baseline_frames < 1
                 i1 = events.(varname).onset(ievent);
-                i2 = iend - ibeg + 1;
-            else
-                i1 = baseline_frames + 1;
-                i2 = iend - ibeg + 1;
+            end
+            if events.(varname).offset(ievent) + baseline_frames > numel(data)
+                i2 = events.(varname).offset(ievent);
             end
 
             x = i1:i2;
@@ -96,22 +99,34 @@ for iname = 2:numel(variable_names)
 
     if params.Results.visualize
         subplot(numel(variable_names)-1, 1, iname-1);
-        %plot(t,signal, 'b')
         hold on
+        % Plot the median as a red line
         plot(t,stats.(varname).median, 'r', 'linewidth',2)
+        % Plot +- standarad error as a red shaded area
         fill([t,fliplr(t)],...
             [stats.(varname).median - stats.(varname).stderr; ...
             flipud(stats.(varname).median + stats.(varname).stderr)], ...
             'r','facealpha',0.25,'edgecolor','r')
-        title(varname)
-        grid on
-        box on
+        t0 = max(t) - baseline_frames * events.(varname).dt;
+        % Plot a gray shaded area over the baseline time before and after
+        % the event
+        patch([min(xlim), 0, 0, min(xlim)],...
+            [min(ylim), min(ylim), max(ylim), max(ylim)],...
+            'k','facealpha',0.2,'edgecolor','none')
+        patch([t0, max(t), max(t), t0],...
+            [min(ylim), min(ylim), max(ylim), max(ylim)],...
+            'k','facealpha',0.2,'edgecolor','none')
+
         if params.Results.normalize
             xlabel('duration (normalized)')
         else
             xlabel('time (s)')
         end
         ylabel('pixel change')
+        title(varname)
+        grid on
+        box on
+        axis tight
     end
 end
 
