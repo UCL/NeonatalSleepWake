@@ -34,10 +34,10 @@ if ~isempty(control_table)
 end
 %% Do statistics and visualise
 movement_event_statistics(data_table, movement_events,...
-    'baseline',1.0,'visualize',true,'normalize',true,'verbose',true);
+    'baseline',1.0,'visualize',true,'normalize',true,'verbose',true,true,'linkaxes',true);
 if ~isempty(control_table)
     movement_event_statistics(data_table_ctrl, movement_events_ctrl,...
-        'baseline',1.0,'visualize',true,'normalize',true,'verbose',true);
+        'baseline',1.0,'visualize',true,'normalize',true,'verbose',true,'linkaxes',true);
 end
 %% Export events
 eeglab_movement_events = convert_events(movement_events);

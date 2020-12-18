@@ -35,4 +35,4 @@ light_events = detect_light_events(master_table, params);
 movement_events = detect_movement_events(master_table, params, light_events);
 %% Do statistics and visualise
 movement_event_statistics(master_table, movement_events,...
-     'baseline',1.0,'visualize',true,'normalize',true,'verbose',true);
+     'baseline',1.0,'visualize',true,'normalize',true,'verbose',true,'linkaxes',true);
