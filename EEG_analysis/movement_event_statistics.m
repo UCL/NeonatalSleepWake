@@ -20,6 +20,7 @@ function stats = movement_event_statistics(data_table, events, varargin)
 params = inputParser;
 addOptional(params, 'baseline', 1.0, @(x) isnumeric(x) && x >= 0);
 addOptional(params, 'visualize', true, @(x) islogical(x));
+addOptional(params, 'linkaxes', true, @(x) islogical(x));
 addOptional(params, 'normalize', true, @(x) islogical(x));
 addOptional(params, 'verbose', true, @(x) islogical(x));
 parse(params, varargin{:});
@@ -29,6 +30,8 @@ stats = struct();
 variable_names = data_table.Properties.VariableNames;
 if params.Results.visualize
     fig = figure;
+    tiledlayout(numel(variable_names)-1, 1)
+    ax = [];
 end
 for iname = 2:numel(variable_names)
     varname = variable_names{iname};
@@ -98,7 +101,7 @@ for iname = 2:numel(variable_names)
     stats.(varname).stderr = std(signal, 0, 2, 'omitnan') / sqrt(events.(varname).n_events);
 
     if params.Results.visualize
-        subplot(numel(variable_names)-1, 1, iname-1);
+        ax(end+1) = nexttile;
         hold on
         % Plot the median as a red line
         plot(t,stats.(varname).median, 'r', 'linewidth',2)
@@ -128,6 +131,10 @@ for iname = 2:numel(variable_names)
         box on
         axis tight
     end
+end
+
+if params.Results.visualize && params.Results.linkaxes
+    linkaxes(ax,'x')
 end
 
 end

@@ -11,14 +11,16 @@ function fig = plot_movement_events(data_table, movement_events, light_events, p
 % Outputs:
 %   - fig: figure handle
 
-fig = figure();
 variable_names = data_table.Properties.VariableNames;
 n_variables = numel(variable_names) - 1;
+fig = figure();
+tiledlayout(n_variables, 1);
+ax = [];
 for ivar = 1:n_variables
 
     local_params = get_local_params(params, ivar, n_variables);
     varname = variable_names{ivar+1};
-    subplot(n_variables, 1, ivar);
+    ax(end+1) = nexttile;
     plot(data_table.Time, data_table.(varname),'.-')
     hold on
     threshold = mean(data_table.(varname), 'omitnan') ...
@@ -45,5 +47,7 @@ for ivar = 1:n_variables
             'location','eastoutside');
     end
 end
+
+linkaxes(ax,'x');
 
 end
