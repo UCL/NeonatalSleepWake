@@ -42,6 +42,7 @@ eeglab_movement_events = convert_events(movement_events);
 eeg = pop_loadset();
 eeg = pop_importevent(eeg,'event',eeglab_movement_events,...
     'fields',{'type','latency','duration'},'append','yes');
+eeg.event_detection_parameters = params;
 %% Save output
 [out_file_name,out_path_name] = uiputfile('*.set','Select output file',...
     [eeg.setname '_movement.set']);
