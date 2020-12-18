@@ -21,6 +21,7 @@ params = inputParser;
 addOptional(params, 'baseline', 1.0, @(x) isnumeric(x) && x >= 0);
 addOptional(params, 'visualize', true, @(x) islogical(x));
 addOptional(params, 'normalize', true, @(x) islogical(x));
+addOptional(params, 'verbose', true, @(x) islogical(x));
 parse(params, varargin{:});
 
 stats = struct();
@@ -31,6 +32,24 @@ if params.Results.visualize
 end
 for iname = 2:numel(variable_names)
     varname = variable_names{iname};
+
+    if params.Results.verbose
+
+        movement_rate = events.(varname).n_events / ...
+            (max(events.(varname).offset) * events.(varname).dt / 3600);
+        avg_duration = mean(events.(varname).duration_s);
+        min_duration = min(events.(varname).duration_s);
+        max_duration = max(events.(varname).duration_s);
+
+        disp([])
+        disp(['Series name: ' varname])
+        disp(['  Average movements/hour: ' num2str(movement_rate)])
+        disp(['  Average movement duration (s): ' num2str(avg_duration)])
+        disp(['  Min movement duration (s): ' num2str(min_duration)])
+        disp(['  Max movement duration (s): ' num2str(max_duration)])
+
+    end
+
     baseline_frames = round(params.Results.baseline / events.(varname).dt);
     max_duration = max(events.(varname).duration_frames + baseline_frames);
     t = (1:max_duration) * events.(varname).dt - params.Results.baseline;
@@ -62,7 +81,7 @@ for iname = 2:numel(variable_names)
             x = i1:i2;
             v = signal(i1:i2,ievent);
             xq = linspace(i1,x(end),max_duration-baseline_frames);
-            signal(i1:end,ievent) = interp1(x,v,xq,'linear');
+            signal(baseline_frames + 1:end,ievent) = interp1(x,v,xq,'linear');
 
         end
 
