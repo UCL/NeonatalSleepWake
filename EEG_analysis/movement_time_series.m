@@ -33,9 +33,11 @@ if ~isempty(control_table)
     plot_movement_events(data_table_ctrl, movement_events_ctrl, light_events, params);
 end
 %% Do statistics and visualise
-movement_event_statistics(data_table, movement_events);
+movement_event_statistics(data_table, movement_events,...
+    'baseline',1.0,'visualize',true,'normalize',true,'verbose',true);
 if ~isempty(control_table)
-    movement_event_statistics(data_table_ctrl, movement_events_ctrl);
+    movement_event_statistics(data_table_ctrl, movement_events_ctrl,...
+        'baseline',1.0,'visualize',true,'normalize',true,'verbose',true);
 end
 %% Export events
 eeglab_movement_events = convert_events(movement_events);
