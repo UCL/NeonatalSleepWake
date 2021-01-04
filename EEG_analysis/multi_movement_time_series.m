@@ -10,9 +10,6 @@ runtests('test_movement_time_series.m')
 if ~iscell(in_file_names)
     in_file_names = {in_file_names};
 end
-%% Set parameters
-params = get_params_for_movement_time_series(true);
-params.dt = mean(diff(data_table.Time), 'omitnan');
 %%
 master_table = table();
 for ifile = 1:numel(in_file_names)
@@ -33,6 +30,9 @@ for ifile = 1:numel(in_file_names)
     %% Append to master table
     master_table = [master_table;data_table];
 end
+%% Set parameters
+params = get_params_for_movement_time_series(true);
+params.dt = median(diff(master_table.Time));
 %% Detect light events
 light_events = detect_light_events(master_table, params);
 %% Detect movement events
