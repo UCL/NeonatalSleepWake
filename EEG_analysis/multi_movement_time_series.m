@@ -12,6 +12,7 @@ if ~iscell(in_file_names)
 end
 %%
 master_table = table();
+master_table_ctrl = table();
 for ifile = 1:numel(in_file_names)
     %% Read time series
     filename = in_file_names{ifile};
@@ -27,8 +28,14 @@ for ifile = 1:numel(in_file_names)
     %% Process data table
     [data_table, data_table_ctrl, ~] = split_control_columns(full_table);
     [data_table, master_table] = merge_tables(data_table, master_table);
+    if ~isempty(data_table_ctrl)
+        [data_table_ctrl, master_table_ctrl] = merge_tables(data_table_ctrl, master_table_ctrl);
+    end
     %% Append to master table
     master_table = [master_table;data_table];
+    if ~isempty(data_table_ctrl)
+        master_table_ctrl = [master_table_ctrl;data_table_ctrl];
+    end
 end
 %% Set parameters
 params = get_params_for_movement_time_series(true);
@@ -37,6 +44,17 @@ params.dt = median(diff(master_table.Time));
 light_events = detect_light_events(master_table, params);
 %% Detect movement events
 movement_events = detect_movement_events(master_table, params, light_events);
+if ~isempty(master_table_ctrl)
+    movement_events_ctrl = detect_movement_events(master_table_ctrl, params, light_events);
+end
 %% Do statistics and visualise
-movement_event_statistics(master_table, movement_events,...
-     'baseline',1.0,'visualize',true,'normalize',true,'verbose',true,'linkaxes',true);
+options = {...
+    'baseline',1.0,...
+    'visualize',true,...
+    'normalize',true,...
+    'verbose',true,...
+    'linkaxes',true};
+movement_event_statistics(master_table, movement_events,options{:});
+if ~isempty(master_table_ctrl)
+     movement_event_statistics(master_table_ctrl, movement_events_ctrl,options{:});
+end
