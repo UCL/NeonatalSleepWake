@@ -80,6 +80,7 @@ The user should mostly intereact with the scripts [movement_time_series.m](EEG_a
 - The default parameters are already set, so you can just click 'ok' if you don't want to change anything
 - In each field, you can either set a single value OR one value per "real" (non-control) time series. You should get warnings if you set the wrong number of parameters.
 5. The script will then plot a figure of the median of all detected events with the standard error shown by a shaded red area. In these plots, all events will be normalized to the duration of the longest event and some time before and after the event will be included in a gray shaded area.
+- If there is a time series with the word 'control' in the label in the csv file, it will be interpreted as a noise signal and subtracted from the "body" time series. The data in the control is normalized with the ratio of the means of the series and the control. The first control series in the table will be used by default (but you can change this). A second figure will be plotted in each set, with the control signal normalized to the mean of the raw signal subtracted from the raw signal. The control-subtracted signals are labeled with `Ctrl` in the plot title.
 6. Summary statistics from the detected events will be printed on screen.
 
 #### Example files
