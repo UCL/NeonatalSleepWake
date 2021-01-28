@@ -1,0 +1,27 @@
+{
+    "description" : "Analysis tools for neonatal EEG data",
+    "title": "NeonatalSleepWake",
+    "upload_type": "software",
+    "creators": [
+        {
+            "name" : "Tuomas Koskela",
+            "orcid" : "0000-0002-5813-6539",
+            "affiliation": "University College London, Gower Street, London, UK"
+        },
+        {
+            "name" : "Kimberley Whitehead",
+            "orcid" : "0000-0002-9787-6038",
+            "affiliation" : "University College London",
+        },
+        {
+            "name" : "Asif Tamuri",
+            "orcid" : "0000-0001-6633-3789",
+            "affiliation": "University College London, Gower Street, London, UK"
+        },
+        {
+            "name" : "Anastasis Georgoulas",
+            "orcid" : "0000-0001-7187-5443"
+            "affiliation": "University College London, Gower Street, London, UK"
+        },
+    ]
+}
