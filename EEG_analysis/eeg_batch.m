@@ -44,9 +44,18 @@ for ifile = 1:numel(in_file_names)
     
     %% Write output data
     eeg_periodicity_data(ifile).setname = eeg_data.setname;
-    i1 = strfind(eeg_periodicity_data(ifile).setname,'BRUK');
-    i2 = strfind(eeg_periodicity_data(ifile).setname,'_day');
-    eeg_periodicity_data(ifile).BRUK = str2double(eeg_periodicity_data(ifile).setname(i1+4:i2-1));
+    % To parse the dataset identifier and its prefix, we use regexp to look
+    % for the first (int or float) number in the set name. Once it's found,
+    % check that it's a finite number and take everything before it as the
+    % prefix. 
+    expression = '[0-9]+\.*[0-9]*';
+    [i1, i2] = regexp(eeg_data.setname,expression);
+    id_value = str2double(eeg_periodicity_data(ifile).setname(i1(1):i2(1)));
+    assert(isnumeric(id_value) && isfinite(id_value), ...
+        ['Failed to parse set ID from set name, got ',id_value, ' instead of a number']);
+    eeg_periodicity_data(ifile).id_prefix = eeg_periodicity_data(ifile).setname(1:i1(1) - 1);
+    eeg_periodicity_data(ifile).id = id_value;
+    %
     eeg_periodicity_data(ifile).nchannels = numel(channels);
     eeg_periodicity_data(ifile).npoints = eeg_data.pnts;
     eeg_periodicity_data(ifile).deleted_fraction = get_deleted_fraction(eeg_data);
