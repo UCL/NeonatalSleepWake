@@ -60,6 +60,39 @@ for i = 1:nc
         burst_corr.hartley = statistics(burst_corr.hartley, channels, i, j);
     end
 end
+
+%% Read excel table
+[filename,pathname] = uigetfile('*.xls*');
+if (ischar(pathname) && ischar(filename))
+    full_table = readtable([pathname,filename], 'UseExcel', true);
+end
+%% Add columns for period and amplitude to the table
+if exist('full_table','var')
+    [id_prefix, id_val] = parse_id_and_prefix(eeg_data);
+    fields = fieldnames(burst_corr);
+    for ifield = 1:numel(fields)
+        for i = 1:nc
+            for j = 1:nc
+                source = channels{i};
+                target = channels{j};
+                field_prefix = [fields{ifield} '-' source '-' target '-'];
+                subfields = fieldnames(burst_corr.(fields{ifield}));
+                for isubfield = 2:numel(subfields)
+                    field_header = [field_prefix subfields{isubfield}];
+                    full_table.(field_header)(full_table.(id_prefix) == id_val) = ...
+                        burst_corr.(fields{ifield}).(subfields{isubfield}).(source)(j);
+                end
+            end
+        end
+    end
+end
+%% Write excel table
+if (exist('full_table','var'))
+    [out_file_name,out_path_name] = uiputfile('*.xlsx','Select output file','outcome_table.xlsx');
+    if out_file_name ~= 0
+        writetable(full_table,[out_path_name,out_file_name])
+    end
+end
 %%
 function s = initialise_tables(s,channels)
 nc = numel(channels);
