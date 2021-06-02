@@ -21,43 +21,43 @@ end
 channels = channels(channel_index);
 %% Initialise variables
 nc = numel(channels);
-burst_corr_data = struct();
+burst_corr = struct();
 %% Process bursts
 events = process_bursts(eeg_data, channels);
 %% Calculate lags & statistics for all bursts
-burst_corr_data.all = struct();
-burst_corr_data.all.lag = cell(nc, nc);
-burst_corr_data.all = initialise_tables(burst_corr_data.all, channels);
+burst_corr.all = struct();
+burst_corr.all.lag = cell(nc, nc);
+burst_corr.all = initialise_tables(burst_corr.all, channels);
 for i = 1:nc
     for j = 1:nc
-        burst_corr_data.all.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        burst_corr_data.all = statistics(burst_corr_data.all, channels, i, j);
+        burst_corr.all.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+        burst_corr.all = statistics(burst_corr.all, channels, i, j);
     end
 end
 %% Calculate lags & statistics for max 1.5s lags [Leroy & Terquem 2017]
-burst_corr_data.leroy_terquem = struct();
-burst_corr_data.leroy_terquem.lag = cell(nc,nc);
-burst_corr_data.leroy_terquem = initialise_tables(burst_corr_data.leroy_terquem, channels);
+burst_corr.leroy_terquem = struct();
+burst_corr.leroy_terquem.lag = cell(nc,nc);
+burst_corr.leroy_terquem = initialise_tables(burst_corr.leroy_terquem, channels);
 max_lag_leroy_terquem = 1.5;
 for i = 1:nc
     for j = 1:nc
-        burst_corr_data.leroy_terquem.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        mask = (burst_corr_data.leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
-        burst_corr_data.leroy_terquem.lag{i,j}(~mask) = NaN;
-        burst_corr_data.leroy_terquem = statistics(burst_corr_data.leroy_terquem, channels, i, j);
+        burst_corr.leroy_terquem.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+        mask = (burst_corr.leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
+        burst_corr.leroy_terquem.lag{i,j}(~mask) = NaN;
+        burst_corr.leroy_terquem = statistics(burst_corr.leroy_terquem, channels, i, j);
     end
 end
 %% Calculate lags & statistics for max 0.5s between offset and onset [Hartley 2012]
-burst_corr_data.hartley = struct();
-burst_corr_data.hartley.lag = cell(nc,nc);
-burst_corr_data.hartley = initialise_tables(burst_corr_data.hartley, channels);
+burst_corr.hartley = struct();
+burst_corr.hartley.lag = cell(nc,nc);
+burst_corr.hartley = initialise_tables(burst_corr.hartley, channels);
 max_lag_hartley = 0.5;
 for i = 1:nc
     for j = 1:nc
-        burst_corr_data.hartley.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        mask = burst_corr_data.hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
-        burst_corr_data.hartley.lag{i,j}(~mask) = NaN;
-        burst_corr_data.hartley = statistics(burst_corr_data.hartley, channels, i, j);
+        burst_corr.hartley.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+        mask = burst_corr.hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
+        burst_corr.hartley.lag{i,j}(~mask) = NaN;
+        burst_corr.hartley = statistics(burst_corr.hartley, channels, i, j);
     end
 end
 %%
