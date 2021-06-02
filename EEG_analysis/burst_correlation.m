@@ -63,12 +63,16 @@ end
 %%
 function s = initialise_tables(s,channels)
 nc = numel(channels);
-doubletype = repmat("double", 1, 4);
+doubletype = repmat("double", 1, nc);
+inttype = repmat("uint64",1, nc);
 s.mean = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
 s.median = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
 s.std = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
 s.p25 = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
 s.p75 = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
+s.count = table('Size',[nc,nc],'VariableTypes',inttype,'VariableNames',channels,'RowNames',channels);
+s.fraction = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
+
 end
 
 function s = statistics(s, channels, i, j)
@@ -77,4 +81,6 @@ s.median.(channels{i})(j) = median(s.lag{i,j}, 'omitnan');
 s.std.(channels{i})(j) = std(s.lag{i,j}, 'omitnan');
 s.p25.(channels{i})(j) = prctile(s.lag{i,j}, 25);
 s.p75.(channels{i})(j) = prctile(s.lag{i,j}, 75);
+s.count.(channels{i})(j) = sum(isfinite(s.lag{i,j}));
+s.fraction.(channels{i})(j) = sum(isfinite(s.lag{i,j}))/numel(s.lag{i,j});
 end
