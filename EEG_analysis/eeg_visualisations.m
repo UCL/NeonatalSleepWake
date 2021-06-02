@@ -61,14 +61,9 @@ while execute_loop
         end
     end
     %% Write output data
-    eeg_periodicity_data(num_files).setname = eeg_data.setname;
-    expression = '[0-9]+\.*[0-9]*';
-    [i1, i2] = regexp(eeg_data.setname,expression);
-    id_value = str2double(eeg_periodicity_data(ifile).setname(i1(1):i2(1)));
-    assert(isnumeric(id_value) && isfinite(id_value), ...
-        ['Failed to parse set ID from set name, got ',id_value, ' instead of a number']);
-    eeg_periodicity_data(ifile).id_prefix = eeg_periodicity_data(ifile).setname(1:i1(1) - 1);
-    eeg_periodicity_data(ifile).id = id_value;
+    [id_prefix,id_value] = parse_id_and_prefix(eeg_data);
+    eeg_periodicity_data(num_files).id_prefix = id_prefix;
+    eeg_periodicity_data(num_files).id = id_value;
     eeg_periodicity_data(num_files).nchannels = numel(channels);
     eeg_periodicity_data(num_files).npoints = eeg_data.pnts;
     eeg_periodicity_data(num_files).deleted_fraction = get_deleted_fraction(eeg_data);
