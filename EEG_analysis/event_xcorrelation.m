@@ -24,8 +24,12 @@ for i = 1:nc
     tmax(i) = max(events.(channels{i}).latency);
 end
 
-nt = 10000;
-t = linspace(0,max(tmax),nt);
+maxlag = 3.0;
+tm = max(tmax);
+npoints = 40;
+
+nt = round(tm/maxlag*npoints);
+t = linspace(0,tm,nt);
 ievents = zeros(nt,nc);
 xc = cell(nc,nc);
 lags = cell(nc,nc);
@@ -41,7 +45,6 @@ for i = 1:nc
 end
 
 r = corrcoef(ievents);
-maxlag = 3.0;
 figure(157);
 
 for i = 1:nc
