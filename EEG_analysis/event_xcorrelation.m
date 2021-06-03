@@ -1,66 +1,46 @@
-%% Read in data
-eeg_data = pop_loadset();
-if isempty(eeg_data)
-    error('No .set file selected')
-end
-%% Select channels
-channels = extractfield(eeg_data.chanlocs, 'labels');
-preset_channels = {'F3','F4','C3','C4'};
-nc0 = numel(preset_channels);
-preset_ids = zeros(1,nc0);
-for i = 1:nc0
-    preset_ids(i) = find(strcmp(channels, preset_channels{i}));
-end
-[channel_index,~] = listdlg('ListString',channels,...
-        'PromptString','Select channel(s)',...
-        'InitialValue',preset_ids);
-channels = channels(channel_index);
-nc = numel(channels);
-%% Process bursts
-events = process_bursts(eeg_data, channels);
-%%
-tmax = zeros(1,nc);
-for i = 1:nc
-    tmax(i) = max(events.(channels{i}).latency);
-end
+function [xc,lags] = event_xcorrelation(events, source, target, mask, maxlag)
+%
 
-maxlag = 3.0;
-tm = max(tmax);
-npoints = 40;
+tmax = max(events.(source).latency(end), events.(target).latency(end));
 
-nt = round(tm/maxlag*npoints);
-t = linspace(0,tm,nt);
-ievents = zeros(nt,nc);
-xc = cell(nc,nc);
-lags = cell(nc,nc);
-dt = max(tmax)/nt;
+npoints = 20;
 
-for i = 1:nc
-    ch = channels{i};
-    for j = 1:events.(ch).n
-        i1 = find(t >= events.(ch).latency(j), 1);
-        i2 = find(t >= events.(ch).latency(j) + events.(ch).duration(j), 1);
-        ievents(i1:i2,i) = 1;
+nt = round(tmax/maxlag*npoints);
+t = linspace(0,tmax,nt);
+timeseries = struct();
+timeseries.(source) = zeros(1,nt);
+timeseries.(target) = zeros(1,nt);
+dt = tmax/nt;
+
+for i = 1:events.(source).n
+    % Mask the source events by a prescribed condition
+    if mask(i)
+        ievent = find(t >= events.(source).latency(i), 1);
+        timeseries.(source)(ievent) = 1;
     end
 end
 
-r = corrcoef(ievents);
-figure(157);
+for i = 1:events.(target).n
+    % Find correlations with all target events
+    ievent = find(t >= events.(target).latency(i), 1);
+    timeseries.(target)(ievent) = 1;
+end
 
-for i = 1:nc
-    for j = 1:nc
-        [xc{i,j}, lags{i,j}] = xcorr(ievents(:,i), ievents(:,j), ...
-            round(maxlag/dt), 'normalized');
-        subplot(nc,nc,nc*(i-1)+j);
-        plot(lags{i,j} .* dt, xc{i,j}, 'linewidth',2)
-        title([channels{i} '--' channels{j}])
-        set(gca,'xtick',-maxlag:1:maxlag)
-        if (i == nc)
-            xlabel('lag (s)')
-        end
-        if (j == 1)
-            ylabel('normalized cross-corr')
-        end
-        axis tight
-    end
+%figure(157);
+
+[xc, lags] = xcorr(timeseries.(source), timeseries.(target), ...
+    round(maxlag/dt), 'normalized');
+lags = lags .* dt;
+%        subplot(nc,nc,nc*(i-1)+j);
+%         %plot(lags{i,j} .* dt, xc{i,j}, 'linewidth',2)
+%         stem(lags{i,j} .* dt, xc{i,j})
+%         title([channels{i} '--' channels{j}])
+%         set(gca,'xtick',-maxlag:1:maxlag)
+%         if (i == nc)
+%             xlabel('lag (s)')
+%         end
+%         if (j == 1)
+%             ylabel('normalized cross-corr')
+%         end
+%         axis tight
 end
