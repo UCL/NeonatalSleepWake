@@ -3,84 +3,98 @@
 %% Run tests
 runtests('test_event_lag.m');
 %% Read in data
-eeg_data = pop_loadset();
-if isempty(eeg_data)
-    error('No .set file selected')
+[in_file_names,in_path_name] = uigetfile('*.set','Select input .set files','multiselect','on');
+if ~iscell(in_file_names)
+    in_file_names = {in_file_names};
 end
-%% Select channels
-channels = extractfield(eeg_data.chanlocs, 'labels');
-preset_channels = {'F3','F4','C3','C4'};
-nc0 = numel(preset_channels);
-preset_ids = zeros(1,nc0);
-for i = 1:nc0
-    preset_ids(i) = find(strcmp(channels, preset_channels{i}));
-end
-[channel_index,~] = listdlg('ListString',channels,...
-        'PromptString','Select channel(s)',...
-        'InitialValue',preset_ids);
-channels = channels(channel_index);
-%% Initialise variables
-nc = numel(channels);
-burst_corr = struct();
-%% Process bursts
-events = process_bursts(eeg_data, channels);
-%% Calculate lags & statistics for all bursts
-burst_corr.all = struct();
-burst_corr.all.lag = cell(nc, nc);
-burst_corr.all = initialise_tables(burst_corr.all, channels);
-for i = 1:nc
-    for j = 1:nc
-        burst_corr.all.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        burst_corr.all = statistics(burst_corr.all, channels, i, j);
-    end
-end
-%% Calculate lags & statistics for max 1.5s lags [Leroy & Terquem 2017]
-burst_corr.leroy_terquem = struct();
-burst_corr.leroy_terquem.lag = cell(nc,nc);
-burst_corr.leroy_terquem = initialise_tables(burst_corr.leroy_terquem, channels);
-max_lag_leroy_terquem = 1.5;
-for i = 1:nc
-    for j = 1:nc
-        burst_corr.leroy_terquem.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        mask = (burst_corr.leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
-        burst_corr.leroy_terquem.lag{i,j}(~mask) = NaN;
-        burst_corr.leroy_terquem = statistics(burst_corr.leroy_terquem, channels, i, j);
-    end
-end
-%% Calculate lags & statistics for max 0.5s between offset and onset [Hartley 2012]
-burst_corr.hartley = struct();
-burst_corr.hartley.lag = cell(nc,nc);
-burst_corr.hartley = initialise_tables(burst_corr.hartley, channels);
-max_lag_hartley = 0.5;
-for i = 1:nc
-    for j = 1:nc
-        burst_corr.hartley.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-        mask = burst_corr.hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
-        burst_corr.hartley.lag{i,j}(~mask) = NaN;
-        burst_corr.hartley = statistics(burst_corr.hartley, channels, i, j);
-    end
-end
-
 %% Read excel table
-[filename,pathname] = uigetfile('*.xls*');
+[filename,pathname] = uigetfile('*.xls*', 'select input excel file');
 if (ischar(pathname) && ischar(filename))
     full_table = readtable([pathname,filename], 'UseExcel', true);
 end
-%% Add columns for period and amplitude to the table
-if exist('full_table','var')
-    [id_prefix, id_val] = parse_id_and_prefix(eeg_data);
-    fields = fieldnames(burst_corr);
-    for ifield = 1:numel(fields)
+%% Initialise variables
+preset_channels = {'F3','F4','C3','C4'};
+nc0 = numel(preset_channels);
+channels = {};
+burst_corr = struct();
+%% Loop over files
+for ifile = 1:numel(in_file_names)
+    %% Read eeglab dataset
+    filename = in_file_names{ifile};
+    eeg_data = pop_loadset([in_path_name,filename]);
+    %% Select channels
+    all_channels = extractfield(eeg_data.chanlocs, 'labels');
+    if isempty(channels)
+        preset_ids = zeros(1,nc0);
+        for i = 1:nc0
+            preset_ids(i) = find(strcmp(all_channels, preset_channels{i}));
+        end
+        [channel_index,~] = listdlg('ListString',all_channels,...
+            'PromptString','Select channel(s)',...
+            'InitialValue',preset_ids);
+        channels = all_channels(channel_index);
+        nc = numel(channels);
+    else
         for i = 1:nc
-            for j = 1:nc
-                source = channels{i};
-                target = channels{j};
-                field_prefix = [fields{ifield} '-' source '-' target '-'];
-                subfields = fieldnames(burst_corr.(fields{ifield}));
-                for isubfield = 2:numel(subfields)
-                    field_header = [field_prefix subfields{isubfield}];
-                    full_table.(field_header)(full_table.(id_prefix) == id_val) = ...
-                        burst_corr.(fields{ifield}).(subfields{isubfield}).(source)(j);
+            if ~any(strcmp(channels{i}, all_channels))
+                error(['Channel ' channels{i} ' not found in ' eeg_data.setname])
+            end
+        end
+    end
+    %% Process bursts
+    events = process_bursts(eeg_data, channels);
+    %% Calculate lags & statistics for all bursts
+    burst_corr(ifile).all = struct();
+    burst_corr(ifile).all.lag = cell(nc, nc);
+    burst_corr(ifile).all = initialise_tables(burst_corr(ifile).all, channels);
+    for i = 1:nc
+        for j = 1:nc
+            burst_corr(ifile).all.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+            burst_corr(ifile).all = statistics(burst_corr(ifile).all, channels, i, j);
+        end
+    end
+    %% Calculate lags & statistics for max 1.5s lags [Leroy & Terquem 2017]
+    burst_corr(ifile).leroy_terquem = struct();
+    burst_corr(ifile).leroy_terquem.lag = cell(nc,nc);
+    burst_corr(ifile).leroy_terquem = initialise_tables(burst_corr(ifile).leroy_terquem, channels);
+    max_lag_leroy_terquem = 1.5;
+    for i = 1:nc
+        for j = 1:nc
+            burst_corr(ifile).leroy_terquem.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+            mask = (burst_corr(ifile).leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
+            burst_corr(ifile).leroy_terquem.lag{i,j}(~mask) = NaN;
+            burst_corr(ifile).leroy_terquem = statistics(burst_corr(ifile).leroy_terquem, channels, i, j);
+        end
+    end
+    %% Calculate lags & statistics for max 0.5s between offset and onset [Hartley 2012]
+    burst_corr(ifile).hartley = struct();
+    burst_corr(ifile).hartley.lag = cell(nc,nc);
+    burst_corr(ifile).hartley = initialise_tables(burst_corr(ifile).hartley, channels);
+    max_lag_hartley = 0.5;
+    for i = 1:nc
+        for j = 1:nc
+            burst_corr(ifile).hartley.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
+            mask = burst_corr(ifile).hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
+            burst_corr(ifile).hartley.lag{i,j}(~mask) = NaN;
+            burst_corr(ifile).hartley = statistics(burst_corr(ifile).hartley, channels, i, j);
+        end
+    end
+    %% Add columns for period and amplitude to the table
+    if exist('full_table','var')
+        [id_prefix, id_val] = parse_id_and_prefix(eeg_data);
+        fields = fieldnames(burst_corr);
+        for ifield = 1:numel(fields)
+            for i = 1:nc
+                for j = 1:nc
+                    source = channels{i};
+                    target = channels{j};
+                    field_prefix = [fields{ifield} '-' source '-' target '-'];
+                    subfields = fieldnames(burst_corr(ifile).(fields{ifield}));
+                    for isubfield = 2:numel(subfields)
+                        field_header = [field_prefix subfields{isubfield}];
+                        full_table.(field_header)(full_table.(id_prefix) == id_val) = ...
+                            burst_corr(ifile).(fields{ifield}).(subfields{isubfield}).(source)(j);
+                    end
                 end
             end
         end
@@ -88,8 +102,8 @@ if exist('full_table','var')
 end
 %% Write excel table
 if (exist('full_table','var'))
-    [out_file_name,out_path_name] = uiputfile('*.xlsx','Select output file','outcome_table.xlsx');
-    if out_file_name ~= 0
+    [out_file_name,out_path_name] = uiputfile('*.xlsx','Select output file','burst_pattern.xlsx');
+    if (ischar(out_path_name) && ischar(out_file_name))
         writetable(full_table,[out_path_name,out_file_name])
     end
 end
