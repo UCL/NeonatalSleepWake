@@ -27,11 +27,12 @@ new_table = table(full_table.(id_prefix),'variablenames',{id_prefix});
 answer = questdlg('Calculate cross correlations? (May be slow)');
 do_xcorr= strcmp(answer, 'Yes');
 if (do_xcorr)
-    prompt = {'Maximum lag (s)', 'Window length (frames)', 'Steepness (std)'};
-    answer = inputdlg(prompt, 'xcorr options',1,{'1.5', '7', '3'});
+    prompt = {'Maximum lag (s)', 'Time resolution (points)','Window length (frames)', 'Steepness (std)'};
+    answer = inputdlg(prompt, 'xcorr options',1,{'1.5', '20', '7', '3'});
     maxlag = str2double(answer{1});
-    gauss_frames = str2double(answer{2});
-    gauss_sds = str2double(answer{3});
+    npoints = str2double(answer{2});
+    gauss_frames = str2double(answer{3});
+    gauss_sds = str2double(answer{4});
 end
 %% Initialise variables
 preset_channels = {'F3','F4','C3','C4'};
@@ -121,7 +122,8 @@ for ifile = 1:numel(in_file_names)
         for i = 1:nc
             for j = 1:nc
                 [xc,xc_lags] = event_xcorrelation(events, channels{i}, ...
-                    channels{j}, maxlag, 'frames', gauss_frames, 'sds', gauss_sds);
+                    channels{j}, maxlag, 'npoints', npoints, 'frames', ...
+                    gauss_frames, 'sds', gauss_sds);
                 burst_corr(ifile).all.xc{i,j} = xc;
                 burst_corr(ifile).all.xc_lags{i,j} = xc_lags;
             end

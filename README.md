@@ -115,7 +115,8 @@ The user should mostly interact with the script `burst_correlation.m`. See the c
 
 5. Select whether cross-correlations between event onsets are calculated. This can increase the run time significantly. If cross-correlations are selected, a second dialog will ask for parameters
 
-  - Maximum lag in seconds: The cross-correlation is computed correlation over the range of lags: -MAXLAG to MAXLAG
+  - Maximum lag in seconds: The cross-correlation is computed correlation over the range of lags: -maxlag to maxlag
+  - Time resolution: Number of points to cover the range 0:maxlag
   - Window length: Event onsets are represented by gaussian peaks, this is the width of the peak in data points.
   - Steepness: Event onsets are represented by gaussian peaks, this is the steepness of the peak in standard deviations within the window.
 

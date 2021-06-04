@@ -15,19 +15,19 @@ function [xc,lags] = event_xcorrelation(events, source, target, maxlag, varargin
 %   'frames' (default 7): Width of the gaussian peak in points
 %   'sds' (default 3): Steepness of the gaussian peak in standard
 %                      deviations
+%   'npoints (default 20): Number of points for 0:maxlag
 % Outputs:
 %   xc: cross-correlation function over the range of lags -maxlag to maxlag
 %   lags: vector of lag indices
 params = inputParser;
 addOptional(params, 'frames', 7, @(x) isnumeric(x));
 addOptional(params, 'sds',    3, @(x) isnumeric(x));
+addOptional(params, 'npoints',20, @(x) isnumeric(x));
 parse(params, varargin{:});
 
 tmax = max(events.(source).latency(end), events.(target).latency(end));
 
-npoints = 20;
-
-nt = round(tmax/maxlag*npoints);
+nt = round(tmax/maxlag*params.Results.npoints);
 t = linspace(0,tmax,nt);
 timeseries = zeros(2,nt);
 dt = tmax/nt;
