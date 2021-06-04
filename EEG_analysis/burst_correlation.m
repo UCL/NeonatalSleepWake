@@ -12,9 +12,11 @@ end
 if (ischar(pathname) && ischar(filename))
     full_table = readtable([pathname,filename], 'UseExcel', true);
 end
-first_column = full_table.Properties.VariableNames{1};
-new_table = table(full_table.(first_column),'variablenames',{first_column});
-%% 
+%% Create table for results
+eeg_data = pop_loadset([in_path_name,in_file_names{1}]);
+[id_prefix, id_val] = parse_id_and_prefix(eeg_data);
+new_table = table(full_table.(id_prefix),'variablenames',{id_prefix});
+%% Get parameters for cross-correlations
 answer = questdlg('Calculate cross correlations? (May be slow)');
 do_xcorr= strcmp(answer, 'Yes');
 if (do_xcorr)
