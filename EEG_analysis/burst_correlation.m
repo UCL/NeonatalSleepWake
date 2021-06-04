@@ -15,6 +15,13 @@ end
 %% 
 answer = questdlg('Calculate cross correlations? (May be slow)');
 do_xcorr= strcmp(answer, 'Yes');
+if (do_xcorr)
+    prompt = {'Maximum lag (s)', 'Window length (frames)', 'Steepness (std)'};
+    answer = inputdlg(prompt, 'xcorr options',1,{'1.5', '7', '3'});
+    maxlag = str2double(answer{1});
+    gauss_frames = str2double(answer{2});
+    gauss_sds = str2double(answer{3});
+end
 %% Initialise variables
 preset_channels = {'F3','F4','C3','C4'};
 nc0 = numel(preset_channels);
@@ -52,7 +59,7 @@ for ifile = 1:numel(in_file_names)
     for i = 1:nc
         for j = 1:nc
             burst_corr(ifile).all.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-            burst_corr(ifile).all.mask{i,j} = true(1,events.(channels{i}).n);
+            mask = true(1,events.(channels{i}).n);
             burst_corr(ifile).all = statistics(burst_corr(ifile).all, channels, i, j);
         end
     end
@@ -63,7 +70,7 @@ for ifile = 1:numel(in_file_names)
     for i = 1:nc
         for j = 1:nc
             burst_corr(ifile).leroy_terquem.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-            burst_corr(ifile).leroy_terquem.mask{i,j} = (burst_corr(ifile).leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
+            mask = (burst_corr(ifile).leroy_terquem.lag{i,j} <= max_lag_leroy_terquem);
             burst_corr(ifile).leroy_terquem.lag{i,j}(~mask) = NaN;
             burst_corr(ifile).leroy_terquem = statistics(burst_corr(ifile).leroy_terquem, channels, i, j);
         end
@@ -75,23 +82,19 @@ for ifile = 1:numel(in_file_names)
     for i = 1:nc
         for j = 1:nc
             burst_corr(ifile).hartley.lag{i,j} = event_lag(events.(channels{i}), events.(channels{j}));
-            burst_corr(ifile).hartley.mask{i,j} = burst_corr(ifile).hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
+            mask = burst_corr(ifile).hartley.lag{i,j} - events.(channels{i}).duration <= max_lag_hartley;
             burst_corr(ifile).hartley.lag{i,j}(~mask) = NaN;
             burst_corr(ifile).hartley = statistics(burst_corr(ifile).hartley, channels, i, j);
         end
     end
     %% Calculate cross-correlations
     if do_xcorr
-        maxlag = 1.0;
         for i = 1:nc
             for j = 1:nc
-                fields = fieldnames(burst_corr);
-                for ifield = 1:numel(fields)
-                    [xc,xc_lags] = event_xcorrelation(events, channels{i}, channels{j},...
-                        burst_corr(ifile).(fields{ifield}).mask{i,j}, maxlag);
-                    burst_corr(ifile).(fields{ifield}).xc{i,j} = xc;
-                    burst_corr(ifile).(fields{ifield}).xc_lags{i,j} = xc_lags;
-                end
+                [xc,xc_lags] = event_xcorrelation(events, channels{i}, ...
+                    channels{j}, maxlag, 'frames', gauss_frames, 'sds', gauss_sds);
+                burst_corr(ifile).all.xc{i,j} = xc;
+                burst_corr(ifile).all.xc_lags{i,j} = xc_lags;
             end
         end
     end
@@ -128,7 +131,7 @@ end
 %% Plot x-correlations
 if do_xcorr
     i = 1;
-    field = 'hartley';
+    field = 'all';
     lags = burst_corr(i).(field).xc_lags;
     xc = burst_corr(i).(field).xc;
     figure;
@@ -155,7 +158,6 @@ nc = numel(channels);
 doubletype = repmat("double", 1, nc);
 inttype = repmat("uint64",1, nc);
 s.lag = cell(nc, nc);
-s.mask = cell(nc, nc);
 s.xc = cell(nc, nc);
 s.xc_lags = cell(nc, nc);
 s.mean = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
