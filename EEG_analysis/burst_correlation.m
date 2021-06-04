@@ -1,5 +1,12 @@
-%
-%
+% This script processes EEG data from eeglab, computes lags and
+% cross-correlations between burst events on different channels. The
+% results are stored in the burst_corr variable in the workspace and can be
+% written into an .xlsx file. To get started, run it and  follow the GUI
+% windows that pop up to select parameters, which files to read and where
+% to save the output.
+% NOTE:
+% You can select multiple input files, but only if they are in the same
+% directory.
 %% Run tests
 runtests('test_event_lag.m');
 %% Read in data
