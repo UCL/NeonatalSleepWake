@@ -12,6 +12,7 @@ end
 if (ischar(pathname) && ischar(filename))
     full_table = readtable([pathname,filename], 'UseExcel', true);
 end
+new_table = table(full_table.(id_prefix),'variablenames',{id_prefix});
 %% 
 answer = questdlg('Calculate cross correlations? (May be slow)');
 do_xcorr= strcmp(answer, 'Yes');
@@ -131,20 +132,22 @@ for ifile = 1:numel(in_file_names)
                     for isubfield = 1:numel(subfields)
                         if istable(burst_corr(ifile).(fields{ifield}).(subfields{isubfield}))
                             field_header = [field_prefix subfields{isubfield}];
-                            full_table.(field_header)(full_table.(id_prefix) == id_val) = ...
+                            new_table.(field_header)(new_table.(id_prefix) == id_val) = ...
                                 burst_corr(ifile).(fields{ifield}).(subfields{isubfield}).(source)(j);
                         end
                     end
                 end
             end
         end
+        new_table = standardizeMissing(new_table, 0);
     end
 end
 %% Write excel table
 if (exist('full_table','var'))
+    out_table = join(full_table, new_table);
     [out_file_name,out_path_name] = uiputfile('*.xlsx','Select output file','burst_pattern.xlsx');
     if (ischar(out_path_name) && ischar(out_file_name))
-        writetable(full_table,[out_path_name,out_file_name])
+        writetable(out_table,[out_path_name,out_file_name])
     end
 end
 %% Plot x-correlations
@@ -175,7 +178,7 @@ end
 function s = initialise_tables(s,channels)
 nc = numel(channels);
 doubletype = repmat("double", 1, nc);
-inttype = repmat("uint64",1, nc);
+inttype = repmat("int64",1, nc);
 s.lag = cell(nc, nc);
 s.xc = cell(nc, nc);
 s.xc_lags = cell(nc, nc);
@@ -186,7 +189,7 @@ s.median = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',cha
 s.std = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
 s.p25 = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
 s.p75 = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
-s.count = table('Size',[nc+1,nc],'VariableTypes',inttype,'VariableNames',channels,'RowNames',rownames);
+s.count = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
 s.fraction = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
 
 end
