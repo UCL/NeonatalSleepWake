@@ -53,6 +53,12 @@ for ifile = 1:numel(in_file_names)
     end
     %% Process bursts
     events = process_bursts(eeg_data, channels);
+    all_events = struct('latency', []);
+    for i = 1:nc
+        all_events.latency = [all_events.latency, events.(channels{i}).latency];
+    end
+    all_events.latency = sort(all_events.latency);
+    all_events.n = numel(all_events.latency);
     %% Calculate lags & statistics for all bursts
     burst_corr(ifile).all = struct();
     burst_corr(ifile).all = initialise_tables(burst_corr(ifile).all, channels);
@@ -62,6 +68,8 @@ for ifile = 1:numel(in_file_names)
             mask = true(1,events.(channels{i}).n);
             burst_corr(ifile).all = statistics(burst_corr(ifile).all, channels, i, j);
         end
+        burst_corr(ifile).all.lag{i, nc+1} = event_lag(events.(channels{i}), all_events);
+        burst_corr(ifile).all = statistics(burst_corr(ifile).all, channels, i, nc+1);
     end
     %% Calculate lags & statistics for max 1.5s lags [Leroy & Terquem 2017]
     burst_corr(ifile).leroy_terquem = struct();
@@ -74,6 +82,10 @@ for ifile = 1:numel(in_file_names)
             burst_corr(ifile).leroy_terquem.lag{i,j}(~mask) = NaN;
             burst_corr(ifile).leroy_terquem = statistics(burst_corr(ifile).leroy_terquem, channels, i, j);
         end
+        burst_corr(ifile).leroy_terquem.lag{i, nc+1} = event_lag(events.(channels{i}), all_events);
+        mask = (burst_corr(ifile).leroy_terquem.lag{i, nc+1} <= max_lag_leroy_terquem);
+        burst_corr(ifile).leroy_terquem.lag{i, nc+1}(~mask) = NaN;
+        burst_corr(ifile).leroy_terquem = statistics(burst_corr(ifile).leroy_terquem, channels, i, nc+1);
     end
     %% Calculate lags & statistics for max 0.5s between offset and onset [Hartley 2012]
     burst_corr(ifile).hartley = struct();
@@ -86,6 +98,10 @@ for ifile = 1:numel(in_file_names)
             burst_corr(ifile).hartley.lag{i,j}(~mask) = NaN;
             burst_corr(ifile).hartley = statistics(burst_corr(ifile).hartley, channels, i, j);
         end
+        burst_corr(ifile).hartley.lag{i, nc+1} = event_lag(events.(channels{i}), all_events);
+        mask = burst_corr(ifile).hartley.lag{i, nc+1} - events.(channels{i}).duration <= max_lag_hartley;
+        burst_corr(ifile).hartley.lag{i, nc+1}(~mask) = NaN;
+        burst_corr(ifile).hartley = statistics(burst_corr(ifile).hartley, channels, i, nc+1);
     end
     %% Calculate cross-correlations
     if do_xcorr
@@ -102,11 +118,14 @@ for ifile = 1:numel(in_file_names)
     if exist('full_table','var')
         [id_prefix, id_val] = parse_id_and_prefix(eeg_data);
         fields = fieldnames(burst_corr);
+        sources = channels;
+        targets = channels;
+        targets{nc + 1} = 'any';
         for ifield = 1:numel(fields)
             for i = 1:nc
-                for j = 1:nc
-                    source = channels{i};
-                    target = channels{j};
+                for j = 1:nc+1
+                    source = sources{i};
+                    target = targets{j};
                     field_prefix = [fields{ifield} '-' source '-' target '-'];
                     subfields = fieldnames(burst_corr(ifile).(fields{ifield}));
                     for isubfield = 1:numel(subfields)
@@ -160,13 +179,15 @@ inttype = repmat("uint64",1, nc);
 s.lag = cell(nc, nc);
 s.xc = cell(nc, nc);
 s.xc_lags = cell(nc, nc);
-s.mean = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
-s.median = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
-s.std = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
-s.p25 = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
-s.p75 = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
-s.count = table('Size',[nc,nc],'VariableTypes',inttype,'VariableNames',channels,'RowNames',channels);
-s.fraction = table('Size',[nc,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',channels);
+rownames = channels;
+rownames{nc+1} = 'any';
+s.mean = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
+s.median = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
+s.std = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
+s.p25 = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
+s.p75 = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
+s.count = table('Size',[nc+1,nc],'VariableTypes',inttype,'VariableNames',channels,'RowNames',rownames);
+s.fraction = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
 
 end
 
