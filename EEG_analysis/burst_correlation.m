@@ -12,7 +12,8 @@ end
 if (ischar(pathname) && ischar(filename))
     full_table = readtable([pathname,filename], 'UseExcel', true);
 end
-new_table = table(full_table.(id_prefix),'variablenames',{id_prefix});
+first_column = full_table.Properties.VariableNames{1};
+new_table = table(full_table.(first_column),'variablenames',{first_column});
 %% 
 answer = questdlg('Calculate cross correlations? (May be slow)');
 do_xcorr= strcmp(answer, 'Yes');
@@ -106,6 +107,8 @@ for ifile = 1:numel(in_file_names)
     end
     %% Calculate cross-correlations
     if do_xcorr
+        burst_corr(ifile).all.xc = cell(nc, nc);
+        burst_corr(ifile).all.xc_lags = cell(nc, nc);
         for i = 1:nc
             for j = 1:nc
                 [xc,xc_lags] = event_xcorrelation(events, channels{i}, ...
@@ -150,20 +153,28 @@ if (exist('full_table','var'))
         writetable(out_table,[out_path_name,out_file_name])
     end
 end
-%% Plot x-correlations
+%% Calculate average x-correlations and plot
 if do_xcorr
-    i = 1;
     field = 'all';
-    lags = burst_corr(i).(field).xc_lags;
-    xc = burst_corr(i).(field).xc;
+    lags = cell(nc,nc);
+    xc = cell(nc,nc);
+    %lags = burst_corr(1).(field).xc_lags;
+    %xc = burst_corr(1).(field).xc;
+    for ifile = 1:numel(burst_corr)
+        for i = 1:nc
+            for j = 1:nc
+                lags{i,j}(ifile,:) = burst_corr(ifile).(field).xc_lags{i,j};
+                xc{i,j}(ifile,:) = burst_corr(ifile).(field).xc{i,j};
+            end
+        end
+    end
+
     figure;
     for i = 1:nc
         for j = 1:nc
             subplot(nc,nc,nc*(i-1)+j);
-            %plot(lags{i,j} .* dt, xc{i,j}, 'linewidth',2)
-            stem(lags{i,j}, xc{i,j})
+            stem(mean(lags{i,j},1), mean(xc{i,j},1))
             title([channels{i} '--' channels{j}])
-            %set(gca,'xtick',-maxlag:1:maxlag)
             if (i == nc)
                 xlabel('lag (s)')
             end
@@ -180,8 +191,6 @@ nc = numel(channels);
 doubletype = repmat("double", 1, nc);
 inttype = repmat("int64",1, nc);
 s.lag = cell(nc, nc);
-s.xc = cell(nc, nc);
-s.xc_lags = cell(nc, nc);
 rownames = channels;
 rownames{nc+1} = 'any';
 s.mean = table('Size',[nc+1,nc],'VariableTypes',doubletype,'VariableNames',channels,'RowNames',rownames);
