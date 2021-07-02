@@ -11,7 +11,7 @@
         {
             "name" : "Kimberley Whitehead",
             "orcid" : "0000-0002-9787-6038",
-            "affiliation" : "University College London",
+            "affiliation" : "University College London"
         },
         {
             "name" : "Asif Tamuri",
@@ -22,6 +22,6 @@
             "name" : "Anastasis Georgoulas",
             "orcid" : "0000-0001-7187-5443",
             "affiliation": "University College London, Gower Street, London, UK"
-        },
+        }
     ]
 }
