@@ -94,3 +94,51 @@ This script processes time series that contain pixel change rates processed from
 #### multi_movement_time_series.m
 
 This script processes multiple time series that contain pixel change rates processed from video clips. It detects movement events and light events. It then plots the median of all events normalized to the same start and end time, and displays statistical information about the events.
+
+## EEG Burst Correlation
+
+This is a tool for analysing temporal cross-correlations between bursts on different EEG channels.
+
+### Usage
+
+The user should mostly interact with the script `burst_correlation.m`. See the comments in each file or use the help function in MATLAB for more details on their purpose. The scripts can be launched on the command line, or in the editor. They will open GUI windows when user input is required.
+
+#### Workflow
+
+1. Run [burst_correlation.m](EEG_analysis/burst_correlation.m) to process data in [eeglab file(s)](https://liveuclac.sharepoint.com/:f:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/test_data?csf=1&web=1&e=NeHgjF). Multiple files can be processed in one run.
+
+2. Some automatic tests will run at first.
+
+3. Select one or more `.set` eeglab files to process. These data sets should have had a burst detection tool create an `events` substructure.
+
+4. Select an `.xlsx` file [MS Excel file](https://liveuclac.sharepoint.com/:x:/r/sites/NeonatalSleepWakeModelling/Shared%20Documents/Tuomas/BRUK_anonymised_num.xlsx?d=w937f7d45efe542d2ba6fa6156d8baee7&csf=1&web=1&e=7FDbLa) to read in. The spreadsheet should contain one line per eeglab data set with a column with an unique identifier that matches the name of each data set.
+
+5. Select whether cross-correlations between event onsets are calculated. This can increase the run time significantly. If cross-correlations are selected, a second dialog will ask for parameters
+
+  - Maximum lag in seconds: The cross-correlation is computed correlation over the range of lags: -maxlag to maxlag
+  - Time resolution: Number of points to cover the range 0:maxlag
+  - Window length: Event onsets are represented by gaussian peaks, this is the width of the peak in data points.
+  - Steepness: Event onsets are represented by gaussian peaks, this is the steepness of the peak in standard deviations within the window.
+
+6. Select 2 or more channels to analyse.
+
+7. The script computes the lags, and the mean, median, standard deviation and 25th and 75th percentiles between the onsets of events in each pair of channels. In addition, it considers events that fulfill two additional criteria:
+
+  - Any other burst type occurs within 0.5 seconds of its offset (Hartley et al. 2012)
+  - Any other burst type onsets within 1.5 sec of its onset (Leroy-Terquem et al. 2017)
+  
+    The same statistics are computed for both of these. In addition, it computes the counts of events fulfilling each criteria in each pair of channels, and the fraction of events to the total number of events. It also computes the same quantities against events in any channel.
+
+8. Select a MS Excep file to write the output.
+
+9. The data is stored in a variable `burst_corr` in the current workspace.
+
+10. The arithmetic mean of the cross-correlation functions over the processed files is plotted in a figure window.
+
+#### event_lag.m
+
+Calculates the lag from each event in the source set to the next following event in the target set
+
+#### event_xcorrelation.m
+
+Calculates the cross-correlation of two sets of events. Events are interpolated onto a time series with uniform time intervals. A gaussian peak is inserted at the onset of each event. The width and steepness of the gaussian peaks can be controlled by the input parameters `frames` and `sds`, respectively. The default values are `frames = 7` and `sds = 3`.
